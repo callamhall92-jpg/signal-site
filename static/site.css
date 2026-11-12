@@ -86,3 +86,13 @@ footer a{color:#fff;text-decoration:none}footer a:hover{color:var(--amber)}
 .doc a{color:var(--ink)}
 :focus-visible{outline:3px solid #2563EB;outline-offset:2px}
 @media (max-width:640px){nav.main{gap:16px}.hero{padding:56px 24px 40px}section.block{padding:56px 0}}
+.fine{font-size:13px;color:var(--grey);font-weight:400}
+.card label{font-weight:600;font-size:15px;margin-bottom:-8px}
+.card input[type=email],.card input[type=text],.card select{width:100%;font:inherit;padding:12px 14px;border:1px solid #9AA3AF;border-radius:4px;background:#fff;color:var(--ink);min-height:48px}
+.card .pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.card .pair div{display:flex;flex-direction:column;gap:14px}
+.card .check{display:flex;gap:10px;align-items:flex-start;font-weight:400;font-size:14px;color:#3A4658;margin:0}
+.card .check input{width:20px;height:20px;margin-top:1px;flex:none}
+.card .trap{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.card button[disabled]{opacity:.6;cursor:default}
+.msg{margin:0;font-size:15px;font-weight:600;min-height:1px}.msg.good{color:var(--green)}.msg.bad{color:#B42318}

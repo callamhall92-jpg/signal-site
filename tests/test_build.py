@@ -52,3 +52,19 @@ def test_robots_and_llms(tmp_path):
     robots = (tmp_path / "dist" / "robots.txt").read_text()
     assert "OAI-SearchBot" in robots and "Sitemap: https://noticehawk.co.uk/sitemap.xml" in robots
     assert "Basic £29 a month" in (tmp_path / "dist" / "llms.txt").read_text()
+
+
+def test_signups_open_shows_the_form(tmp_path):
+    build.build(STATS, dict(CFG, signup_open=True), tmp_path / "dist")
+    home = (tmp_path / "dist" / "index.html").read_text()
+    assert '<form class="card" id="signup"' in home and "functions/v1/lead-form" in home
+    assert home.count("<option>") == 12 and 'value="roofing"' in home
+    assert 'name="website"' in home and "/signup.js" in home
+    assert "open shortly" not in home and "No card needed." in home
+    assert (tmp_path / "dist" / "signup.js").exists()
+
+
+def test_confirmed_page(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    page = (tmp_path / "dist" / "confirmed" / "index.html").read_text()
+    assert "You're confirmed." in page and "noindex" in page

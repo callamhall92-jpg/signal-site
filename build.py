@@ -79,16 +79,45 @@ def chips(items: list[dict], labels: dict | None = None) -> str:
         f'<li>{html.escape((labels or {}).get(i["name"], i["name"]))}<span>{int(i["n"])}</span></li>' for i in items)
 
 
+REGIONS = ["East Midlands", "East of England", "London", "North East", "North West", "Northern Ireland",
+           "Scotland", "South East", "South West", "Wales", "West Midlands", "Yorkshire and the Humber"]
+WORK_TYPES = ["repairs_maintenance", "refurbishment", "new_build", "mechanical_electrical", "roofing",
+              "groundworks_civils", "design_professional"]
+
+
 def start_block(cfg: dict) -> str:
     email = html.escape(cfg["contact_email"])
+    if not cfg.get("signup_open"):
+        return (
+            '<div><h2>Free accounts open shortly.</h2>'
+            '<p>Three tenders a week for your region and your kind of work, free. '
+            'Paid plans add the full scored list.</p></div>'
+            f'<div class="card"><strong>Want to be first in?</strong>'
+            f'<span>Email us with your region and the work you do, and we will set you up on day one.</span>'
+            f'<a class="btn dark" style="text-align:center" href="mailto:{email}?subject=Noticehawk%20early%20access">Email {email}</a>'
+            '<span class="fine">We never sell or share your details.</span></div>')
+    regions = "".join(f"<option>{html.escape(r)}</option>" for r in REGIONS)
+    work = "".join(f'<option value="{w}">{html.escape(CATEGORY_LABELS[w])}</option>' for w in WORK_TYPES)
     return (
-        '<div><h2>Free accounts open shortly.</h2>'
-        '<p>Three tenders a week for your region and your kind of work, free. '
-        'Paid plans add the full scored list.</p></div>'
-        f'<div class="card"><strong>Want to be first in?</strong>'
-        f'<span>Email us with your region and the work you do, and we will set you up on day one.</span>'
-        f'<a class="btn dark" style="text-align:center" href="mailto:{email}?subject=Noticehawk%20early%20access">Email {email}</a>'
-        '<span style="font-size:13px;color:#6B7280">We never sell or share your details.</span></div>')
+        '<div><h2>Start with three tenders a week, free.</h2>'
+        '<p>Pick your region and the work you do. Upgrade any time for the full scored list.</p></div>'
+        f'<form class="card" id="signup" action="{html.escape(cfg["signup_url"], quote=True)}" method="post" novalidate>'
+        '<label for="s-email">Work email</label>'
+        '<input id="s-email" name="email" type="email" autocomplete="email" required>'
+        '<label for="s-company">Company name or number <span class="fine">(optional)</span></label>'
+        '<input id="s-company" name="company" type="text" autocomplete="organization" maxlength="160">'
+        '<div class="pair">'
+        f'<div><label for="s-region">Region</label><select id="s-region" name="region" required><option value="">Choose</option>{regions}</select></div>'
+        f'<div><label for="s-work">Main type of work</label><select id="s-work" name="work" required><option value="">Choose</option>{work}</select></div>'
+        '</div>'
+        '<div class="trap" aria-hidden="true"><label for="s-website">Leave this empty</label>'
+        '<input id="s-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>'
+        '<label class="check"><input name="partner_opt_in" type="checkbox">'
+        '<span>Send me offers from selected partners, such as bid writers and insurers. Optional.</span></label>'
+        '<button class="btn dark" type="submit">Start free</button>'
+        '<p class="msg" id="signup-msg" role="status" aria-live="polite"></p>'
+        '<span class="fine">We never sell or share your details. See the <a href="/privacy/">privacy notice</a>.</span>'
+        '</form><script src="/signup.js" defer></script>')
 
 
 def json_ld(cfg: dict) -> str:
@@ -151,6 +180,18 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         base, cfg, "/welcome/", "Welcome | Noticehawk", "Your Noticehawk subscription is set up.",
         simple.format(h="You're in.", p="Thank you. Your subscription is set up and a receipt is on its way from Stripe. "
                       "Your first alert arrives on Monday."), '<meta name="robots" content="noindex">'))
+    (out / "confirmed").mkdir()
+    (out / "confirmed" / "index.html").write_text(page(
+        base, cfg, "/confirmed/", "Email confirmed | Noticehawk", "Your Noticehawk email address is confirmed.",
+        '<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
+        '</div></header></div><main id="main" class="doc">'
+        '<div id="ok"><h1>You\'re confirmed.</h1><p>Your free tender alerts are switched on. '
+        'The first one arrives on Monday, with three tenders for your region and type of work.</p></div>'
+        '<div id="bad" hidden><h1>That link did not work.</h1><p>It may have been copied incompletely. '
+        f'Sign up again from the homepage, or email <a href="mailto:{html.escape(cfg["contact_email"])}">{html.escape(cfg["contact_email"])}</a> and we will sort it out.</p></div>'
+        '<p><a class="btn dark" href="/">Back to the homepage</a></p></main>'
+        '<script>if(new URLSearchParams(location.search).get("status")){document.getElementById("ok").hidden=true;'
+        'document.getElementById("bad").hidden=false}</script>', '<meta name="robots" content="noindex">'))
     (out / "404.html").write_text(page(
         base, cfg, "/404.html", "Page not found | Noticehawk", "That page does not exist.",
         simple.format(h="Page not found", p="That page does not exist or has moved."), '<meta name="robots" content="noindex">'))
