@@ -119,3 +119,5 @@ legend{font-weight:700;padding:0 6px}
 .ticks label{display:flex;gap:10px;align-items:center;min-height:40px;color:var(--ink)}
 .ticks input{width:20px;height:20px;flex:none}
 .ticks input:disabled + span{color:#9AA3AF}
+.linkish{background:none;border:0;padding:0;font:inherit;color:var(--grey);text-decoration:underline;cursor:pointer}
+#sl-actions .btn{margin:0 8px 8px 0;font-size:15px;padding:13px 18px}

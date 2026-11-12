@@ -103,3 +103,11 @@ def test_preferences_page(tmp_path):
     page = (tmp_path / "dist" / "preferences" / "index.html").read_text()
     assert page.count('name="regions"') == 12 and page.count('name="trades"') == 7
     assert "functions/v1/preferences" in page and "noindex" in page and (tmp_path / "dist" / "preferences.js").exists()
+
+
+def test_shortlist_page(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    page = (tmp_path / "dist" / "shortlist" / "index.html").read_text()
+    assert "functions/v1/shortlist" in page and "noindex" in page and "Add the deadline to my calendar" in page
+    assert (tmp_path / "dist" / "shortlist.js").exists()
+    assert "Shortlist with deadline reminders" in (tmp_path / "dist" / "index.html").read_text()

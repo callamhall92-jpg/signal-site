@@ -324,6 +324,15 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         + '</div></fieldset><button class="btn dark" type="submit">Save my choices</button>'
         '<p class="msg" id="pref-msg" role="status" aria-live="polite"></p></form></main>'
         '<script src="/preferences.js" defer></script>', '<meta name="robots" content="noindex">'))
+    (out / "shortlist").mkdir()
+    (out / "shortlist" / "index.html").write_text(page(
+        base, cfg, "/shortlist/", "Your shortlist | Noticehawk", "Deadline reminders for a tender on your shortlist.",
+        HEADER + f'<main id="main" class="doc" data-api="{html.escape(cfg["shortlist_url"], quote=True)}">'
+        '<h1 id="sl-title">One moment…</h1><p id="sl-text"></p>'
+        '<p id="sl-actions" hidden><a class="btn dark" id="sl-notice" href="#" rel="noopener">Open the official notice</a> '
+        '<a class="btn outline" id="sl-cal" href="#" download="tender-deadline.ics">Add the deadline to my calendar</a></p>'
+        '<p id="sl-undo-wrap" hidden><button class="linkish" id="sl-undo" type="button">Take it off my shortlist</button></p>'
+        '</main><script src="/shortlist.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "unsubscribe").mkdir()
     (out / "unsubscribe" / "index.html").write_text(page(
         base, cfg, "/unsubscribe/", "Unsubscribe | Noticehawk", "Stop Noticehawk emails.",

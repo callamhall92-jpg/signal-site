@@ -5,5 +5,6 @@
   "signup_open": false,
   "signup_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/lead-form",
   "unsubscribe_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/unsubscribe",
-  "preferences_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/preferences"
+  "preferences_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/preferences",
+  "shortlist_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/shortlist"
 }
