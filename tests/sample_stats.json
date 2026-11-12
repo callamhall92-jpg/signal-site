@@ -1,0 +1,7 @@
+{"generated_at":"2026-11-12T16:20:00+00:00","open_count":486,"value_total":1234567890,"closing_14":141,
+ "regions":[{"name":"London","n":71},{"name":"South East","n":59},{"name":"Yorkshire and the Humber","n":46}],
+ "categories":[{"name":"repairs_maintenance","n":145},{"name":"refurbishment","n":98},{"name":"roofing","n":25}],
+ "sample":[
+  {"score":100,"title":"HALIFAX VICTORIA THEATRE Refurbishment of Green Room Bar & Kitchen","buyer":"Calderdale Council","region":"Yorkshire and the Humber","category":"refurbishment","value":180000,"days":19,"url":"https://www.find-tender.service.gov.uk/Notice/100001-2026","reason":"Code and title match; value £180,000; 19 days to bid; buyer says it suits smaller firms"},
+  {"score":72,"title":"Roof <b>survey</b>","buyer":"A & B Trust","region":"London","category":"roofing","value":1200000,"days":1,"url":"https://www.find-tender.service.gov.uk/Notice/100002-2026","reason":"Code match"},
+  {"score":90,"title":"Bad link","buyer":"X","region":"London","category":"roofing","value":5,"days":9,"url":"javascript:alert(1)","reason":""}]}
