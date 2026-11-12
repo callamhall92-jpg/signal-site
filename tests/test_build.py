@@ -111,3 +111,10 @@ def test_shortlist_page(tmp_path):
     assert "functions/v1/shortlist" in page and "noindex" in page and "Add the deadline to my calendar" in page
     assert (tmp_path / "dist" / "shortlist.js").exists()
     assert "Shortlist with deadline reminders" in (tmp_path / "dist" / "index.html").read_text()
+
+
+def test_preferences_page_has_watchlists(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    page = (tmp_path / "dist" / "preferences" / "index.html").read_text()
+    assert 'id="watch" hidden' in page and 'id="keywords"' in page and 'id="competitors"' in page
+    assert "Competitor watch" in (tmp_path / "dist" / "index.html").read_text()

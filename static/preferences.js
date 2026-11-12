@@ -5,6 +5,10 @@
   var msg = document.getElementById("pref-msg");
   var token = new URLSearchParams(location.search).get("token");
   var limits = { regions: 1, trades: 1 };
+  var watch = false;
+  function lines(id) {
+    return document.getElementById(id).value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+  }
   function say(text, ok) { msg.textContent = text; msg.className = "msg " + (ok ? "good" : "bad"); }
   function boxes(name) { return Array.prototype.slice.call(form.querySelectorAll('input[name="' + name + '"]')); }
   function chosen(name) { return boxes(name).filter(function (b) { return b.checked; }).map(function (b) { return b.value; }); }
@@ -30,6 +34,14 @@
       enforce(name);
       boxes(name).forEach(function (b) { b.addEventListener("change", function () { enforce(name); }); });
     });
+    if (p.max_keywords > 0 || p.max_competitors > 0) {
+      watch = true;
+      document.getElementById("watch").hidden = false;
+      document.getElementById("keyword-limit").textContent = "(up to " + p.max_keywords + ")";
+      document.getElementById("competitor-limit").textContent = "(up to " + p.max_competitors + ")";
+      document.getElementById("keywords").value = (p.keywords || []).join("\n");
+      document.getElementById("competitors").value = (p.competitors || []).join("\n");
+    }
     form.hidden = false;
   }).catch(function () {
     intro.textContent = "We could not find your account from this link. Open the link from your most recent email, or write to hello@noticehawk.co.uk.";
@@ -41,12 +53,16 @@
     say("Saving…", true);
     fetch(form.dataset.api, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: token, regions: chosen("regions"), trades: chosen("trades") })
+      body: JSON.stringify(watch
+        ? { token: token, regions: chosen("regions"), trades: chosen("trades"), keywords: lines("keywords"), competitors: lines("competitors") }
+        : { token: token, regions: chosen("regions"), trades: chosen("trades") })
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (b) { return { status: res.status, body: b }; });
     }).then(function (r) {
       if (r.status === 200) say("Saved. Your next alert will use these choices.", true);
       else if (r.body.error === "too_few") say("Choose at least one region and one type of work.", false);
+      else if (r.body.error === "watch_too_many") say("That is more keywords or competitors than your plan includes. Remove some and save again.", false);
+      else if (r.body.error === "watch_bad_length") say("Each keyword or name needs to be between 3 and 60 characters.", false);
       else if (r.body.error === "too_many") say("That is more than your plan includes. Untick one, or upgrade from the pricing page.", false);
       else say("That did not save. Please try again in a few minutes.", false);
     }).catch(function () { say("That did not save. Check your connection and try again.", false); })

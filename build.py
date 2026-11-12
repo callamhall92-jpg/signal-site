@@ -321,7 +321,15 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         + "".join(f'<label><input type="checkbox" name="regions" value="{html.escape(r)}"><span>{html.escape(r)}</span></label>' for r in REGIONS)
         + '</div></fieldset><fieldset><legend>Types of work <span class="fine" id="trade-limit"></span></legend><div class="ticks" id="trades">'
         + "".join(f'<label><input type="checkbox" name="trades" value="{w}"><span>{html.escape(CATEGORY_LABELS[w])}</span></label>' for w in WORK_TYPES)
-        + '</div></fieldset><button class="btn dark" type="submit">Save my choices</button>'
+        + '</div></fieldset>'
+        '<fieldset id="watch" hidden><legend>Watchlists <span class="fine">(Premium)</span></legend>'
+        '<label for="keywords">Keywords to watch, one per line <span class="fine" id="keyword-limit"></span></label>'
+        '<textarea id="keywords" rows="4" placeholder="asbestos&#10;fire doors"></textarea>'
+        '<p class="fine">We flag any open tender that mentions one, whatever the type of work.</p>'
+        '<label for="competitors">Competitors to watch, one per line <span class="fine" id="competitor-limit"></span></label>'
+        '<textarea id="competitors" rows="3" placeholder="Part of the company name is enough"></textarea>'
+        '<p class="fine">We tell you when a firm with that name wins a public contract.</p></fieldset>'
+        '<button class="btn dark" type="submit">Save my choices</button>'
         '<p class="msg" id="pref-msg" role="status" aria-live="polite"></p></form></main>'
         '<script src="/preferences.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "shortlist").mkdir()

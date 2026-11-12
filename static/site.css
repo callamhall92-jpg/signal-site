@@ -121,3 +121,6 @@ legend{font-weight:700;padding:0 6px}
 .ticks input:disabled + span{color:#9AA3AF}
 .linkish{background:none;border:0;padding:0;font:inherit;color:var(--grey);text-decoration:underline;cursor:pointer}
 #sl-actions .btn{margin:0 8px 8px 0;font-size:15px;padding:13px 18px}
+fieldset label{display:block;font-weight:600;margin:10px 0 6px}
+fieldset textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid #9AA3AF;border-radius:4px}
+fieldset p.fine{margin:4px 0 10px}
