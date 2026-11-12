@@ -74,3 +74,32 @@ def test_unsubscribe_page(tmp_path):
     build.build(STATS, CFG, tmp_path / "dist")
     page = (tmp_path / "dist" / "unsubscribe" / "index.html").read_text()
     assert "Unsubscribe me" in page and "functions/v1/unsubscribe" in page and 'method:"POST"' in page
+
+
+def test_listing_pages(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    out = tmp_path / "dist"
+    for path in ("tenders/index.html", "tenders/roofing/index.html", "tenders/south-east/index.html",
+                 "tenders/roofing/south-east/index.html", "tenders/roofing/scotland/index.html",
+                 "tenders/refurbishment/east-of-england/index.html"):
+        assert (out / path).exists(), path
+    assert not (out / "tenders" / "roofing" / "london").exists()                # no page without a tender
+    page = (out / "tenders" / "roofing" / "index.html").read_text()
+    assert "<h1>Roofing tenders in the UK</h1>" in page and "2 open public-sector tenders" in page
+    assert "Roof repairs &amp; minor &lt;works&gt;" in page and "evil.example" not in page and "Bad link row" not in page
+    assert page.index("Roof repairs") < page.index("Flat roof replacement")       # soonest deadline first
+    assert "BreadcrumbList" in page and "ItemList" in page
+    both = (out / "tenders" / "roofing" / "south-east" / "index.html").read_text()
+    assert "<h1>Roofing tenders in the South East</h1>" in both and "/tenders/roofing/scotland/" in both
+    assert "Roofing tenders in Scotland" in (out / "tenders" / "roofing" / "scotland" / "index.html").read_text()
+    site = (out / "sitemap.xml").read_text()
+    assert "/tenders/roofing/south-east/" in site and site.count("<url>") == 4 + 8
+    home = (out / "index.html").read_text()
+    assert '<a href="/tenders/south-east/">South East<span>59</span></a>' in home
+
+
+def test_preferences_page(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    page = (tmp_path / "dist" / "preferences" / "index.html").read_text()
+    assert page.count('name="regions"') == 12 and page.count('name="trades"') == 7
+    assert "functions/v1/preferences" in page and "noindex" in page and (tmp_path / "dist" / "preferences.js").exists()

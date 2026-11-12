@@ -17,7 +17,7 @@ CATEGORY_LABELS = {
     "roofing": "Roofing", "groundworks_civils": "Groundworks and civils",
     "design_professional": "Design and professional services", "other": "Other",
 }
-NOTICE_PREFIX = "https://www.find-tender.service.gov.uk/"
+NOTICE_PREFIXES = ("https://www.find-tender.service.gov.uk/", "https://www.contractsfinder.service.gov.uk/")
 
 FAQ = [
     ("What is Noticehawk?",
@@ -56,7 +56,7 @@ def sample_rows(rows: list[dict]) -> str:
     out = []
     for r in rows[:5]:
         url = r.get("url") or ""
-        if not url.startswith(NOTICE_PREFIX):
+        if not url.startswith(NOTICE_PREFIXES):
             continue
         score = int(r["score"])
         note = (r.get("reason") or "").split(";")[-1].strip().capitalize()
@@ -74,9 +74,13 @@ def sample_rows(rows: list[dict]) -> str:
     return "\n".join(out)
 
 
-def chips(items: list[dict], labels: dict | None = None) -> str:
-    return "\n".join(
-        f'<li>{html.escape((labels or {}).get(i["name"], i["name"]))}<span>{int(i["n"])}</span></li>' for i in items)
+def chips(items: list[dict], labels: dict | None = None, links: dict | None = None) -> str:
+    out = []
+    for i in items:
+        text = f'{html.escape((labels or {}).get(i["name"], i["name"]))}<span>{int(i["n"])}</span>'
+        href = (links or {}).get(i["name"])
+        out.append(f'<li><a href="{href}">{text}</a></li>' if href else f"<li>{text}</li>")
+    return "\n".join(out)
 
 
 REGIONS = ["East Midlands", "East of England", "London", "North East", "North West", "Northern Ireland",
@@ -120,6 +124,97 @@ def start_block(cfg: dict) -> str:
         '</form><script src="/signup.js" defer></script>')
 
 
+def slug(name: str) -> str:
+    return "".join(ch if ch.isalnum() else "-" for ch in name.lower()).strip("-").replace("--", "-")
+
+
+def category_slug(category: str) -> str:
+    return slug(CATEGORY_LABELS[category])
+
+
+HEADER = ('<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
+          '<nav class="main" aria-label="Main"><a href="/tenders/">Browse tenders</a><a href="/#pricing">Pricing</a>'
+          '<a class="btn small" href="/#start">Start free</a></nav></div></header></div>')
+
+
+def listing_pages(stats: dict) -> list[dict]:
+    """One page per work type, per region and per pairing that has at least one open tender."""
+    rows = [r for r in (stats.get("listings") or [])
+            if (r.get("url") or "").startswith(NOTICE_PREFIXES) and r.get("category") in CATEGORY_LABELS and r.get("region") in REGIONS]
+    rows.sort(key=lambda r: (int(r["days"]), r["title"]))      # soonest deadline first
+    pages = []
+    for cat in WORK_TYPES:
+        hits = [r for r in rows if r["category"] == cat]
+        if hits:
+            pages.append({"path": f"/tenders/{category_slug(cat)}/", "category": cat, "region": None, "rows": hits})
+    for region in REGIONS:
+        hits = [r for r in rows if r["region"] == region]
+        if hits:
+            pages.append({"path": f"/tenders/{slug(region)}/", "category": None, "region": region, "rows": hits})
+        for cat in WORK_TYPES:
+            both = [r for r in hits if r["category"] == cat]
+            if both:
+                pages.append({"path": f"/tenders/{category_slug(cat)}/{slug(region)}/", "category": cat, "region": region, "rows": both})
+    return pages
+
+
+def place_phrase(region: str) -> str:
+    return f"in {region}" if region in ("London", "Wales", "Scotland", "Northern Ireland", "Yorkshire and the Humber") else f"in the {region}"
+
+
+def listing_title(page: dict) -> str:
+    work = CATEGORY_LABELS[page["category"]] if page["category"] else "Construction"
+    return f"{work} tenders" + (f" {place_phrase(page['region'])}" if page["region"] else " in the UK")
+
+
+def render_listing(page: dict, pages: list[dict], cfg: dict, updated_text: str) -> tuple[str, str]:
+    rows, title = page["rows"], listing_title(page)
+    shown = rows[:12]
+    body_rows = "\n".join(
+        f'<tr><td><a href="{html.escape(r["url"], quote=True)}" rel="noopener">{html.escape(r["title"])}</a>'
+        f'<small>{html.escape(" · ".join(x for x in (None if page["region"] else r["region"], None if page["category"] else CATEGORY_LABELS[r["category"]]) if x))}</small></td>'
+        f'<td class="muted">{html.escape(r.get("buyer") or "Not stated")}</td>'
+        f'<td class="num">{money(r.get("value"))}</td>'
+        f'<td class="num">{int(r["days"])} day{"" if int(r["days"]) == 1 else "s"}</td></tr>' for r in shown)
+    n = len(rows)
+    more = (f'<p class="more">Showing the {len(shown)} closing soonest of {n}. Subscribers get every one, scored for a firm their size.</p>'
+            if n > len(shown) else "")
+    def related(label, items):
+        links = "".join(f'<li><a href="{p["path"]}">{html.escape(text)}<span>{len(p["rows"])}</span></a></li>' for text, p in items)
+        return f'<h2 class="sub">{label}</h2><ul class="chips links">{links}</ul>' if links else ""
+    if page["category"] and page["region"]:
+        rel = related(f"{CATEGORY_LABELS[page['category']]} tenders in other regions",
+                      [(p["region"], p) for p in pages if p["category"] == page["category"] and p["region"] and p is not page])
+        rel += related(f"Other work {place_phrase(page['region'])}",
+                       [(CATEGORY_LABELS[p["category"]], p) for p in pages if p["region"] == page["region"] and p["category"] and p is not page])
+    elif page["category"]:
+        rel = related("By region", [(p["region"], p) for p in pages if p["category"] == page["category"] and p["region"]])
+    else:
+        rel = related("By type of work", [(CATEGORY_LABELS[p["category"]], p) for p in pages if p["region"] == page["region"] and p["category"]])
+    crumbs = [("Home", "/"), ("Tenders", "/tenders/")]
+    if page["category"] and page["region"]:
+        crumbs.append((CATEGORY_LABELS[page["category"]], f"/tenders/{category_slug(page['category'])}/"))
+    crumbs.append((title, page["path"]))
+    ld = {"@context": "https://schema.org", "@graph": [
+        {"@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": i + 1, "name": name, "item": cfg["site_url"] + path} for i, (name, path) in enumerate(crumbs)]},
+        {"@type": "ItemList", "name": title, "numberOfItems": n, "itemListElement": [
+            {"@type": "ListItem", "position": i + 1, "name": r["title"], "url": r["url"]} for i, r in enumerate(shown)]}]}
+    head = '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"
+    trail = " › ".join(f'<a href="{path}">{html.escape(name)}</a>' for name, path in crumbs[:-1])
+    body = (HEADER + '<main id="main" class="doc wide">'
+            f'<p class="trail">{trail}</p><h1>{html.escape(title)}</h1>'
+            f'<p class="lede dark">{n} open public-sector tender{"" if n == 1 else "s"} on {updated_text}, '
+            f'checked daily against the official notice services. The next closes in {int(rows[0]["days"])} days.</p>'
+            '<div class="tablebox light"><table><thead><tr><th scope="col">Tender</th><th scope="col">Buyer</th>'
+            f'<th scope="col">Value</th><th scope="col">Closes</th></tr></thead><tbody>{body_rows}</tbody></table></div>'
+            f'{more}<div class="cta-box"><div><strong>Get these by email every Monday.</strong>'
+            '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
+            '<a class="btn" href="/#start">Start free</a></div>'
+            f'{rel}</main>')
+    return body, head
+
+
 def json_ld(cfg: dict) -> str:
     site = cfg["site_url"]
     graph = [
@@ -152,12 +247,13 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     base = (ROOT / "templates" / "base.html").read_text()
     updated = datetime.fromisoformat(stats["generated_at"]).astimezone(timezone.utc)
     updated_text = f"{updated.day} {updated:%B %Y}"
+    pages = listing_pages(stats)
     home = Template((ROOT / "templates" / "home.html").read_text()).substitute(
         open_count=f'{int(stats["open_count"]):,}', value_total=money(stats["value_total"]),
         closing_14=f'{int(stats["closing_14"]):,}', updated=updated_text,
         sample_rows=sample_rows(stats.get("sample") or []),
-        region_chips=chips(stats.get("regions") or []),
-        category_chips=chips(stats.get("categories") or [], CATEGORY_LABELS),
+        region_chips=chips(stats.get("regions") or [], None, {p["region"]: p["path"] for p in pages if p["region"] and not p["category"]}),
+        category_chips=chips(stats.get("categories") or [], CATEGORY_LABELS, {p["category"]: p["path"] for p in pages if p["category"] and not p["region"]}),
         start_block=start_block(cfg),
         hero_note=("Three tenders a week for your region, free. No card needed." if cfg.get("signup_open")
                    else "Free accounts open shortly: three tenders a week for your region, no card needed."),
@@ -179,7 +275,8 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     (out / "welcome" / "index.html").write_text(page(
         base, cfg, "/welcome/", "Welcome | Noticehawk", "Your Noticehawk subscription is set up.",
         simple.format(h="You're in.", p="Thank you. Your subscription is set up and a receipt is on its way from Stripe. "
-                      "Your first alert arrives on Monday."), '<meta name="robots" content="noindex">'))
+                      "If you have not chosen your regions and type of work yet, we will email you a link to do it. "
+                      "Your first alert arrives on the Monday after that."), '<meta name="robots" content="noindex">'))
     (out / "confirmed").mkdir()
     (out / "confirmed" / "index.html").write_text(page(
         base, cfg, "/confirmed/", "Email confirmed | Noticehawk", "Your Noticehawk email address is confirmed.",
@@ -192,6 +289,41 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p><a class="btn dark" href="/">Back to the homepage</a></p></main>'
         '<script>if(new URLSearchParams(location.search).get("status")){document.getElementById("ok").hidden=true;'
         'document.getElementById("bad").hidden=false}</script>', '<meta name="robots" content="noindex">'))
+    for p in pages:
+        body, head = render_listing(p, pages, cfg, updated_text)
+        target = out / p["path"].strip("/")
+        target.mkdir(parents=True, exist_ok=True)
+        title = listing_title(p)
+        (target / "index.html").write_text(page(
+            base, cfg, p["path"], f"{title} | Noticehawk",
+            f"{len(p['rows'])} open {title[0].lower() + title[1:]}, updated {updated_text}. Buyer, value and closing date for each, with a link to the official notice.",
+            body, head))
+    index_body = (HEADER + '<main id="main" class="doc wide"><h1>Browse open construction tenders</h1>'
+                  f'<p class="lede dark">UK public-sector tenders for construction and building maintenance work, counted on {updated_text}.</p>'
+                  '<h2 class="sub">By type of work</h2><ul class="chips links">'
+                  + "".join(f'<li><a href="{p["path"]}">{html.escape(CATEGORY_LABELS[p["category"]])}<span>{len(p["rows"])}</span></a></li>' for p in pages if p["category"] and not p["region"])
+                  + '</ul><h2 class="sub">By region</h2><ul class="chips links">'
+                  + "".join(f'<li><a href="{p["path"]}">{html.escape(p["region"])}<span>{len(p["rows"])}</span></a></li>' for p in pages if p["region"] and not p["category"])
+                  + '</ul><div class="cta-box"><div><strong>Get your tenders by email every Monday.</strong>'
+                  '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
+                  '<a class="btn" href="/#start">Start free</a></div></main>')
+    (out / "tenders").mkdir(exist_ok=True)
+    (out / "tenders" / "index.html").write_text(page(
+        base, cfg, "/tenders/", "Browse open construction tenders | Noticehawk",
+        "Open UK public-sector construction and building maintenance tenders by region and type of work, updated daily.", index_body))
+    (out / "preferences").mkdir()
+    (out / "preferences" / "index.html").write_text(page(
+        base, cfg, "/preferences/", "Your regions and work types | Noticehawk", "Choose the tenders Noticehawk sends you.",
+        HEADER + '<main id="main" class="doc"><h1>Your regions and work types</h1>'
+        '<p id="pref-intro">Loading your choices…</p>'
+        f'<form id="prefs" hidden data-api="{html.escape(cfg["preferences_url"], quote=True)}">'
+        '<fieldset><legend>Regions <span class="fine" id="region-limit"></span></legend><div class="ticks" id="regions">'
+        + "".join(f'<label><input type="checkbox" name="regions" value="{html.escape(r)}"><span>{html.escape(r)}</span></label>' for r in REGIONS)
+        + '</div></fieldset><fieldset><legend>Types of work <span class="fine" id="trade-limit"></span></legend><div class="ticks" id="trades">'
+        + "".join(f'<label><input type="checkbox" name="trades" value="{w}"><span>{html.escape(CATEGORY_LABELS[w])}</span></label>' for w in WORK_TYPES)
+        + '</div></fieldset><button class="btn dark" type="submit">Save my choices</button>'
+        '<p class="msg" id="pref-msg" role="status" aria-live="polite"></p></form></main>'
+        '<script src="/preferences.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "unsubscribe").mkdir()
     (out / "unsubscribe" / "index.html").write_text(page(
         base, cfg, "/unsubscribe/", "Unsubscribe | Noticehawk", "Stop Noticehawk emails.",
@@ -215,7 +347,8 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         base, cfg, "/404.html", "Page not found | Noticehawk", "That page does not exist.",
         simple.format(h="Page not found", p="That page does not exist or has moved."), '<meta name="robots" content="noindex">'))
     today = updated.strftime("%Y-%m-%d")
-    urls = "".join(f"<url><loc>{cfg['site_url']}{p}</loc><lastmod>{today}</lastmod></url>" for p in ("/", "/privacy/", "/terms/"))
+    urls = "".join(f"<url><loc>{cfg['site_url']}{p}</loc><lastmod>{today}</lastmod></url>"
+                   for p in ["/", "/tenders/"] + [p["path"] for p in pages] + ["/privacy/", "/terms/"])
     (out / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n')
     (out / "robots.txt").write_text(
         "User-agent: *\nAllow: /\n\n"
@@ -235,6 +368,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         f"- Contact: {cfg['contact_email']}\n\n"
         "## Pages\n\n"
         f"- [Home]({cfg['site_url']}/): what the service does, live tender counts, plans and common questions\n"
+        f"- [Browse tenders]({cfg['site_url']}/tenders/): open tenders by region and type of work, {len(pages)} pages\n"
         f"- [Privacy notice]({cfg['site_url']}/privacy/)\n- [Terms of service]({cfg['site_url']}/terms/)\n")
 
 
