@@ -192,6 +192,25 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p><a class="btn dark" href="/">Back to the homepage</a></p></main>'
         '<script>if(new URLSearchParams(location.search).get("status")){document.getElementById("ok").hidden=true;'
         'document.getElementById("bad").hidden=false}</script>', '<meta name="robots" content="noindex">'))
+    (out / "unsubscribe").mkdir()
+    (out / "unsubscribe" / "index.html").write_text(page(
+        base, cfg, "/unsubscribe/", "Unsubscribe | Noticehawk", "Stop Noticehawk emails.",
+        '<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
+        '</div></header></div><main id="main" class="doc"><h1>Unsubscribe</h1>'
+        '<div id="ask"><p>Stop all Noticehawk emails to this address. A paid plan is not cancelled by this; '
+        'use the billing link in any alert to do that.</p>'
+        '<p><button class="btn dark" id="go" type="button">Unsubscribe me</button></p></div>'
+        '<p class="msg" id="out" role="status" aria-live="polite"></p>'
+        f'<p>Trouble with this page? Email <a href="mailto:{html.escape(cfg["contact_email"])}">{html.escape(cfg["contact_email"])}</a> and we will do it for you.</p></main>'
+        f'<script>(function(){{var t=new URLSearchParams(location.search).get("token"),o=document.getElementById("out"),a=document.getElementById("ask");'
+        'function say(m,ok){o.textContent=m;o.className="msg "+(ok?"good":"bad")}'
+        'if(!t){a.hidden=true;say("This link is incomplete. Open the unsubscribe link from one of our emails again.",false);return}'
+        'document.getElementById("go").addEventListener("click",function(){this.disabled=true;'
+        f'fetch({json.dumps(cfg["unsubscribe_url"])}+"?token="+encodeURIComponent(t),{{method:"POST"}})'
+        '.then(function(r){if(r.ok){a.hidden=true;say("Done. You will not get any more emails from us.",true)}'
+        'else{say("That did not work. Please try again, or email us.",false)}})'
+        '.catch(function(){say("That did not work. Check your connection and try again.",false)})})})();</script>',
+        '<meta name="robots" content="noindex">'))
     (out / "404.html").write_text(page(
         base, cfg, "/404.html", "Page not found | Noticehawk", "That page does not exist.",
         simple.format(h="Page not found", p="That page does not exist or has moved."), '<meta name="robots" content="noindex">'))

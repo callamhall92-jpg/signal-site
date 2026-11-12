@@ -3,5 +3,6 @@
   "stats_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/site-stats",
   "contact_email": "hello@noticehawk.co.uk",
   "signup_open": false,
-  "signup_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/lead-form"
+  "signup_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/lead-form",
+  "unsubscribe_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/unsubscribe"
 }

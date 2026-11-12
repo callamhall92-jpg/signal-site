@@ -68,3 +68,9 @@ def test_confirmed_page(tmp_path):
     build.build(STATS, CFG, tmp_path / "dist")
     page = (tmp_path / "dist" / "confirmed" / "index.html").read_text()
     assert "You're confirmed." in page and "noindex" in page
+
+
+def test_unsubscribe_page(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    page = (tmp_path / "dist" / "unsubscribe" / "index.html").read_text()
+    assert "Unsubscribe me" in page and "functions/v1/unsubscribe" in page and 'method:"POST"' in page
