@@ -430,6 +430,12 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         + '</div></fieldset><fieldset><legend>Types of work <span class="fine" id="trade-limit"></span></legend><div class="ticks" id="trades">'
         + "".join(f'<label><input type="checkbox" name="trades" value="{w}"><span>{html.escape(CATEGORY_LABELS[w])}</span></label>' for w in WORK_TYPES)
         + '</div></fieldset>'
+        '<fieldset id="fit" hidden><legend>Contract size</legend>'
+        '<p class="fine">Tell us what you take on and your scores will reflect your firm, not a typical small one.</p>'
+        '<label for="min_value">Smallest contract worth bidding for</label>'
+        '<select id="min_value"><option value="">Any size</option><option value="10000">£10,000</option><option value="25000">£25,000</option><option value="50000">£50,000</option><option value="100000">£100,000</option><option value="250000">£250,000</option></select>'
+        '<label for="max_value">Largest contract you would take on</label>'
+        '<select id="max_value"><option value="">Any size</option><option value="100000">£100,000</option><option value="250000">£250,000</option><option value="500000">£500,000</option><option value="1000000">£1 million</option><option value="2000000">£2 million</option><option value="5000000">£5 million</option></select></fieldset>'
         '<fieldset id="watch" hidden><legend>Watchlists <span class="fine">(Premium)</span></legend>'
         '<label for="keywords">Keywords to watch, one per line <span class="fine" id="keyword-limit"></span></label>'
         '<textarea id="keywords" rows="4" placeholder="asbestos&#10;fire doors"></textarea>'

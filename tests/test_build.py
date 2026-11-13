@@ -174,4 +174,14 @@ def test_preferences_page_offers_followed_buyers(tmp_path):
     cfg = json.loads((build.ROOT / "config.json").read_text())
     build.build(json.loads((build.ROOT / "tests" / "sample_stats.json").read_text()), cfg, tmp_path)
     assert 'id="buyers"' in (tmp_path / "preferences" / "index.html").read_text()
-    assert 'buyers: lines("buyers")' in (tmp_path / "preferences.js").read_text()
+    assert 'body.buyers = lines("buyers")' in (tmp_path / "preferences.js").read_text()
+
+
+def test_preferences_page_offers_contract_size(tmp_path):
+    import build
+    cfg = json.loads((build.ROOT / "config.json").read_text())
+    build.build(json.loads((build.ROOT / "tests" / "sample_stats.json").read_text()), cfg, tmp_path)
+    page = (tmp_path / "preferences" / "index.html").read_text()
+    assert 'id="fit" hidden' in page and '<option value="250000">£250,000</option>' in page
+    script = (tmp_path / "preferences.js").read_text()
+    assert "body.max_value" in script and "fit_bad_range" in script

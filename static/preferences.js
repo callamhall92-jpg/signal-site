@@ -5,7 +5,7 @@
   var msg = document.getElementById("pref-msg");
   var token = new URLSearchParams(location.search).get("token");
   var limits = { regions: 1, trades: 1 };
-  var watch = false;
+  var watch = false, fit = false;
   function lines(id) {
     return document.getElementById(id).value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
   }
@@ -34,6 +34,15 @@
       enforce(name);
       boxes(name).forEach(function (b) { b.addEventListener("change", function () { enforce(name); }); });
     });
+    if (p.fit) {
+      fit = true;
+      document.getElementById("fit").hidden = false;
+      ["min_value", "max_value"].forEach(function (id) {
+        var el = document.getElementById(id), v = p[id] === null || p[id] === undefined ? "" : String(Math.round(Number(p[id])));
+        if (v && !Array.prototype.some.call(el.options, function (o) { return o.value === v; })) el.add(new Option("£" + Number(v).toLocaleString("en-GB"), v));
+        el.value = v;
+      });
+    }
     if (p.max_keywords > 0 || p.max_competitors > 0) {
       watch = true;
       document.getElementById("watch").hidden = false;
@@ -48,6 +57,15 @@
   }).catch(function () {
     intro.textContent = "We could not find your account from this link. Open the link from your most recent email, or write to hello@noticehawk.co.uk.";
   });
+  function payload() {
+    var body = { token: token, regions: chosen("regions"), trades: chosen("trades") };
+    if (watch) { body.keywords = lines("keywords"); body.competitors = lines("competitors"); body.buyers = lines("buyers"); }
+    if (fit) {
+      body.min_value = document.getElementById("min_value").value || null;
+      body.max_value = document.getElementById("max_value").value || null;
+    }
+    return body;
+  }
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var button = form.querySelector("button");
@@ -55,15 +73,14 @@
     say("Saving…", true);
     fetch(form.dataset.api, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(watch
-        ? { token: token, regions: chosen("regions"), trades: chosen("trades"), keywords: lines("keywords"), competitors: lines("competitors"), buyers: lines("buyers") }
-        : { token: token, regions: chosen("regions"), trades: chosen("trades") })
+      body: JSON.stringify(payload())
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (b) { return { status: res.status, body: b }; });
     }).then(function (r) {
       if (r.status === 200) say("Saved. Your next alert will use these choices.", true);
       else if (r.body.error === "too_few") say("Choose at least one region and one type of work.", false);
       else if (r.body.error === "watch_too_many") say("That is more keywords, competitors or buyers than your plan includes. Remove some and save again.", false);
+      else if (r.body.error === "fit_bad_range") say("The smallest contract needs to be less than the largest.", false);
       else if (r.body.error === "watch_bad_length") say("Each keyword or name needs to be between 3 and 60 characters.", false);
       else if (r.body.error === "too_many") say("That is more than your plan includes. Untick one, or upgrade from the pricing page.", false);
       else say("That did not save. Please try again in a few minutes.", false);
