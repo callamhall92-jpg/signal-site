@@ -149,3 +149,11 @@ def test_how_it_works_example_alert_and_weekly_digest(tmp_path):
     build.build({**stats, "digest": [], "sample": []}, cfg, tmp_path)
     assert "being put together" in (tmp_path / "this-week" / "index.html").read_text()
     assert "being refreshed" in (tmp_path / "example-alert" / "index.html").read_text()
+
+
+def test_homepage_menu_links_to_the_new_pages(tmp_path):
+    import build
+    cfg = json.loads((build.ROOT / "config.json").read_text())
+    build.build(json.loads((build.ROOT / "tests" / "sample_stats.json").read_text()), cfg, tmp_path)
+    home = (tmp_path / "index.html").read_text()
+    assert all(f'href="/{p}/"' in home for p in ("this-week", "how-it-works", "example-alert"))
