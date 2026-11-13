@@ -234,10 +234,23 @@ def json_ld(cfg: dict) -> str:
     return f'<script type="application/ld+json">{data}</script>'
 
 
+def analytics(cfg: dict, head_extra: str) -> str:
+    """Cookie-free visit counting on public pages only.
+
+    Account pages (marked noindex) carry a personal link in their address, so they are never measured.
+    """
+    token = cfg.get("analytics_token")
+    if not token or "noindex" in head_extra:
+        return ""
+    beacon = html.escape(json.dumps({"token": token}), quote=True)
+    return f'<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{beacon}"></script>'
+
+
 def page(base: str, cfg: dict, path: str, title: str, description: str, body: str, head_extra: str = "") -> str:
     return Template(base).substitute(
         title=html.escape(title), description=html.escape(description, quote=True),
-        canonical=cfg["site_url"] + path, head_extra=head_extra, body=body, email=html.escape(cfg["contact_email"]))
+        canonical=cfg["site_url"] + path, head_extra=head_extra, body=body, email=html.escape(cfg["contact_email"]),
+        analytics=analytics(cfg, head_extra))
 
 
 def build(stats: dict, cfg: dict, out: Path) -> None:

@@ -118,3 +118,16 @@ def test_preferences_page_has_watchlists(tmp_path):
     page = (tmp_path / "dist" / "preferences" / "index.html").read_text()
     assert 'id="watch" hidden' in page and 'id="keywords"' in page and 'id="competitors"' in page
     assert "Competitor watch" in (tmp_path / "dist" / "index.html").read_text()
+
+
+def test_analytics_on_public_pages_only(tmp_path):
+    import build
+    cfg = {**json.loads((build.ROOT / "config.json").read_text()), "analytics_token": "abc123"}
+    stats = json.loads((build.ROOT / "tests" / "sample_stats.json").read_text())
+    build.build(stats, cfg, tmp_path)
+    assert "cloudflareinsights.com/beacon.min.js" in (tmp_path / "index.html").read_text()
+    assert "abc123" in (tmp_path / "privacy" / "index.html").read_text()
+    for private in ("preferences", "shortlist", "unsubscribe", "welcome", "confirmed"):
+        assert "cloudflareinsights" not in (tmp_path / private / "index.html").read_text(), private
+    build.build(stats, {**cfg, "analytics_token": ""}, tmp_path)
+    assert "cloudflareinsights" not in (tmp_path / "index.html").read_text()

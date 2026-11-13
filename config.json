@@ -6,5 +6,6 @@
   "signup_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/lead-form",
   "unsubscribe_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/unsubscribe",
   "preferences_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/preferences",
-  "shortlist_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/shortlist"
+  "shortlist_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/shortlist",
+  "analytics_token": "603ed6a7710144c883381ca4714c11b5"
 }
