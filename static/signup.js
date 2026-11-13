@@ -20,7 +20,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: f.email.value, company: f.company.value, region: f.region.value, work: f.work.value,
-        partner_opt_in: f.partner_opt_in.checked, website: f.website.value, page: location.pathname
+        partner_opt_in: f.partner_opt_in.checked, product_updates: f.product_updates.checked, website: f.website.value, page: location.pathname
       })
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (body) { return { status: res.status, body: body }; });

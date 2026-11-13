@@ -116,6 +116,8 @@ def start_block(cfg: dict) -> str:
         '</div>'
         '<div class="trap" aria-hidden="true"><label for="s-website">Leave this empty</label>'
         '<input id="s-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>'
+        '<label class="check"><input name="product_updates" type="checkbox" checked>'
+        '<span>Tell me now and then about Noticehawk\'s paid plans. Untick if you would rather not.</span></label>'
         '<label class="check"><input name="partner_opt_in" type="checkbox">'
         '<span>Send me offers from selected partners, such as bid writers and insurers. Optional.</span></label>'
         '<button class="btn dark" type="submit">Start free</button>'

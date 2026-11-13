@@ -157,3 +157,13 @@ def test_homepage_menu_links_to_the_new_pages(tmp_path):
     build.build(json.loads((build.ROOT / "tests" / "sample_stats.json").read_text()), cfg, tmp_path)
     home = (tmp_path / "index.html").read_text()
     assert all(f'href="/{p}/"' in home for p in ("this-week", "how-it-works", "example-alert"))
+
+
+def test_sign_up_form_offers_the_plan_news_opt_out(tmp_path):
+    import build
+    cfg = {**json.loads((build.ROOT / "config.json").read_text()), "signup_open": True}
+    build.build(json.loads((build.ROOT / "tests" / "sample_stats.json").read_text()), cfg, tmp_path)
+    home = (tmp_path / "index.html").read_text()
+    assert 'name="product_updates" type="checkbox" checked' in home and "Untick if you would rather not" in home
+    assert "product_updates: f.product_updates.checked" in (tmp_path / "signup.js").read_text()
+    assert "up to two short emails" in (tmp_path / "privacy" / "index.html").read_text()
