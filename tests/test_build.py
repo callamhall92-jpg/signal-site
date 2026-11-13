@@ -167,3 +167,11 @@ def test_sign_up_form_offers_the_plan_news_opt_out(tmp_path):
     assert 'name="product_updates" type="checkbox" checked' in home and "Untick if you would rather not" in home
     assert "product_updates: f.product_updates.checked" in (tmp_path / "signup.js").read_text()
     assert "up to two short emails" in (tmp_path / "privacy" / "index.html").read_text()
+
+
+def test_preferences_page_offers_followed_buyers(tmp_path):
+    import build
+    cfg = json.loads((build.ROOT / "config.json").read_text())
+    build.build(json.loads((build.ROOT / "tests" / "sample_stats.json").read_text()), cfg, tmp_path)
+    assert 'id="buyers"' in (tmp_path / "preferences" / "index.html").read_text()
+    assert 'buyers: lines("buyers")' in (tmp_path / "preferences.js").read_text()

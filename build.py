@@ -436,7 +436,10 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p class="fine">We flag any open tender that mentions one, whatever the type of work.</p>'
         '<label for="competitors">Competitors to watch, one per line <span class="fine" id="competitor-limit"></span></label>'
         '<textarea id="competitors" rows="3" placeholder="Part of the company name is enough"></textarea>'
-        '<p class="fine">We tell you when a firm with that name wins a public contract.</p></fieldset>'
+        '<p class="fine">We tell you when a firm with that name wins a public contract.</p>'
+        '<label for="buyers">Buyers to follow, one per line <span class="fine" id="buyer-limit"></span></label>'
+        '<textarea id="buyers" rows="3" placeholder="Kent County Council&#10;Medway"></textarea>'
+        '<p class="fine">We send every open tender from a buyer with that name, wherever it is and whatever the type of work.</p></fieldset>'
         '<button class="btn dark" type="submit">Save my choices</button>'
         '<p class="msg" id="pref-msg" role="status" aria-live="polite"></p></form></main>'
         '<script src="/preferences.js" defer></script>', '<meta name="robots" content="noindex">'))
