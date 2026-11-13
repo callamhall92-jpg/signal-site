@@ -41,7 +41,32 @@
    "value": 180000,
    "days": 19,
    "url": "https://www.find-tender.service.gov.uk/Notice/100001-2026",
-   "reason": "Code and title match; value \u00a3180,000; 19 days to bid; buyer says it suits smaller firms"
+   "reason": "Code and title match; value \u00a3180,000; 19 days to bid; buyer says it suits smaller firms",
+   "parts": {
+    "fit": [
+     30,
+     30
+    ],
+    "value": [
+     25,
+     25
+    ],
+    "time": [
+     16,
+     20
+    ],
+    "sme": [
+     15,
+     15
+    ],
+    "detail": [
+     0,
+     10
+    ],
+    "missing": [
+     "where the work is"
+    ]
+   }
   },
   {
    "score": 72,
@@ -106,6 +131,28 @@
    "deadline": "2026-12-01",
    "days": 19,
    "url": "http://evil.example/x"
+  }
+ ],
+ "digest": [
+  {
+   "title": "Flat roof replacement, sports hall",
+   "buyer": "Sevenoaks District Council",
+   "region": "South East",
+   "category": "roofing",
+   "value": 250000,
+   "deadline": "2026-12-04",
+   "days": 22,
+   "url": "https://www.find-tender.service.gov.uk/Notice/1-2026"
+  },
+  {
+   "title": "Injected <script>",
+   "buyer": "X",
+   "region": "London",
+   "category": "roofing",
+   "value": null,
+   "deadline": "2026-12-04",
+   "days": 22,
+   "url": "javascript:alert(1)"
   }
  ]
 }

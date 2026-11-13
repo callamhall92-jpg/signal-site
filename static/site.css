@@ -124,3 +124,16 @@ legend{font-weight:700;padding:0 6px}
 fieldset label{display:block;font-weight:600;margin:10px 0 6px}
 fieldset textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid #9AA3AF;border-radius:4px}
 fieldset p.fine{margin:4px 0 10px}
+
+.mail{border:1px solid var(--line);border-radius:6px;background:#fff;margin:28px 0;overflow:hidden}
+.mail-head{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:baseline;background:var(--ink);color:#fff;padding:16px 20px}
+.mail-head span{font-size:14px;opacity:.85}
+.mail-item{display:flex;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.mail-item a{font-weight:700;color:var(--ink);text-decoration:none}
+.mail-item p{margin:4px 0 0;font-size:14px}
+.mail-item .why{font-size:13px;color:var(--grey)}
+.mail-item .check{font-size:13px;color:#8A5A00}
+.mail-item .remind{font-size:13px;font-weight:700;color:var(--ink);text-decoration:underline}
+.mail-item .score{align-self:flex-start;flex:none}
+.mail-foot{padding:14px 20px;font-size:13px;color:var(--grey)}
+.doc .tablebox{margin:16px 0}

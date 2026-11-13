@@ -133,7 +133,7 @@ def category_slug(category: str) -> str:
 
 
 HEADER = ('<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
-          '<nav class="main" aria-label="Main"><a href="/tenders/">Browse tenders</a><a href="/#pricing">Pricing</a>'
+          '<nav class="main" aria-label="Main"><a href="/this-week/">This week</a><a href="/tenders/">Browse tenders</a><a href="/how-it-works/">How it works</a><a href="/#pricing">Pricing</a>'
           '<a class="btn small" href="/#start">Start free</a></nav></div></header></div>')
 
 
@@ -215,6 +215,82 @@ def render_listing(page: dict, pages: list[dict], cfg: dict, updated_text: str) 
     return body, head
 
 
+PART_LABELS = [("fit", "Fit with your work"), ("value", "Contract size"), ("time", "Time to bid"),
+               ("sme", "Suits smaller firms"), ("detail", "Detail in the notice")]
+
+
+def closing_text(days: int) -> str:
+    return f"closes in {days} day{'' if days == 1 else 's'}"
+
+
+def example_alert(stats: dict, updated_text: str) -> str:
+    """A subscriber email laid out as it arrives, using this week's live sample tenders."""
+    cards = []
+    for r in (stats.get("sample") or [])[:4]:
+        url = r.get("url") or ""
+        if not url.startswith(NOTICE_PREFIXES):
+            continue
+        parts = r.get("parts") or {}
+        line = " · ".join(f"{label} {parts[k][0]}/{parts[k][1]}" for k, label in PART_LABELS if k in parts)
+        missing = parts.get("missing") or []
+        meta = " | ".join(x for x in (r.get("region"), CATEGORY_LABELS.get(r.get("category"), ""), money(r.get("value")),
+                                      closing_text(int(r["days"]))) if x)
+        cards.append(
+            '<div class="mail-item"><span class="score high">' + str(int(r["score"])) + '</span><div>'
+            f'<a href="{html.escape(url, quote=True)}" rel="noopener">{html.escape(r["title"])}</a>'
+            f'<p>{html.escape(r.get("buyer") or "Buyer not stated")}</p><p>{html.escape(meta)}</p>'
+            f'<p class="why">{html.escape(r.get("reason") or "")}</p>'
+            + (f'<p class="why">{html.escape(line)}</p>' if line else "")
+            + (f'<p class="check"><strong>Check first:</strong> Not stated in the notice: {html.escape(", ".join(missing))}.</p>' if missing else "")
+            + '<p class="remind">Remind me before this closes</p></div></div>')
+    if not cards:
+        cards.append('<p>This week\'s example is being refreshed.</p>')
+    return (HEADER + '<main id="main" class="doc"><h1>What a Noticehawk alert looks like</h1>'
+            f'<p class="lede dark">This is the Monday email a paying subscriber receives, filled with real tenders open on {updated_text}. '
+            'Yours contains only your regions and your type of work.</p>'
+            '<div class="mail"><div class="mail-head"><strong>Noticehawk</strong>'
+            f'<span>{len(cards)} tenders for you this week</span></div>' + "".join(cards)
+            + '<div class="mail-foot">You are on the Professional plan. Change your regions and work types, or unsubscribe, from any email.</div></div>'
+            '<h2>What each part means</h2><ul>'
+            '<li><strong>The score</strong> is out of 100. <a href="/how-it-works/">How it is worked out</a>.</li>'
+            '<li><strong>The points line</strong> shows where the score came from, so you can see at a glance why a tender ranks where it does.</li>'
+            '<li><strong>Check first</strong> flags anything the notice leaves out and anything that should give you pause, such as a short deadline.</li>'
+            '<li><strong>Remind me</strong> adds the tender to your shortlist. You get a reminder seven days and two days before it closes.</li>'
+            '</ul><p>Free accounts get three tenders a week without the scores. Professional and Premium alerts also list contracts coming up for renewal '
+            'and newly awarded contracts near you.</p>'
+            '<div class="cta-box"><div><strong>Get this for your region.</strong><span>Three tenders a week free, no card needed.</span></div>'
+            '<a class="btn" href="/#start">Start free</a></div></main>')
+
+
+def weekly_digest(stats: dict, updated_text: str, cfg: dict) -> tuple[str, str]:
+    """The ten most interesting tenders published in the last week, with links to the official notices."""
+    rows = [r for r in (stats.get("digest") or []) if (r.get("url") or "").startswith(NOTICE_PREFIXES)][:10]
+    body_rows = "\n".join(
+        f'<tr><td><a href="{html.escape(r["url"], quote=True)}" rel="noopener">{html.escape(r["title"])}</a>'
+        f'<small>{html.escape(" · ".join(x for x in (r.get("region"), CATEGORY_LABELS.get(r.get("category"), "")) if x))}</small></td>'
+        f'<td class="muted">{html.escape(r.get("buyer") or "Not stated")}</td>'
+        f'<td class="num">{money(r.get("value"))}</td>'
+        f'<td class="num">{int(r["days"])} days</td></tr>' for r in rows)
+    if not rows:
+        body_rows = '<tr><td colspan="4" class="muted">This week\'s list is being put together.</td></tr>'
+    ld = {"@context": "https://schema.org", "@type": "ItemList", "name": "Construction tenders worth a look this week",
+          "numberOfItems": len(rows), "itemListElement": [
+              {"@type": "ListItem", "position": i + 1, "name": r["title"], "url": r["url"]} for i, r in enumerate(rows)]}
+    head = '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"
+    body = (HEADER + '<main id="main" class="doc wide"><h1>Construction tenders worth a look this week</h1>'
+            f'<p class="lede dark">The {len(rows) or "ten"} highest-scoring UK public-sector construction and building maintenance tenders '
+            f'published in the last week, as of {updated_text}. Each links to its official notice.</p>'
+            '<div class="tablebox light"><table><thead><tr><th scope="col">Tender</th><th scope="col">Buyer</th>'
+            f'<th scope="col">Value</th><th scope="col">Closes in</th></tr></thead><tbody>{body_rows}</tbody></table></div>'
+            '<p class="more">This list is the same for everyone. Subscribers get the tenders for their own regions and type of work, with a score for each. '
+            '<a href="/example-alert/">See an example alert</a>.</p>'
+            '<div class="cta-box"><div><strong>Get your own list every Monday.</strong>'
+            '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
+            '<a class="btn" href="/#start">Start free</a></div>'
+            '<p><a href="/tenders/">Browse all open tenders by region and type of work</a></p></main>')
+    return body, head
+
+
 def json_ld(cfg: dict) -> str:
     site = cfg["site_url"]
     graph = [
@@ -282,6 +358,23 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         body = Template((ROOT / "templates" / f"{name}.html").read_text()).substitute(email=html.escape(cfg["contact_email"]))
         (out / name).mkdir()
         (out / name / "index.html").write_text(page(base, cfg, f"/{name}/", title, description, body))
+    how = Template((ROOT / "templates" / "how-it-works.html").read_text()).substitute(
+        header=HEADER, email=html.escape(cfg["contact_email"]))
+    (out / "how-it-works").mkdir()
+    (out / "how-it-works" / "index.html").write_text(page(
+        base, cfg, "/how-it-works/", "How Noticehawk works: sources, checks and scoring | Noticehawk",
+        "Where Noticehawk's tenders come from, how often they are checked, how changed and withdrawn notices are handled, and how each score out of 100 is worked out.", how))
+    (out / "example-alert").mkdir()
+    (out / "example-alert" / "index.html").write_text(page(
+        base, cfg, "/example-alert/", "Example tender alert email | Noticehawk",
+        "See the weekly email a Noticehawk subscriber receives: scored construction tenders with the points behind each score and what to check first.",
+        example_alert(stats, updated_text)))
+    digest_body, digest_head = weekly_digest(stats, updated_text, cfg)
+    (out / "this-week").mkdir()
+    (out / "this-week" / "index.html").write_text(page(
+        base, cfg, "/this-week/", "Construction tenders worth a look this week | Noticehawk",
+        f"The highest-scoring UK public-sector construction and building maintenance tenders published in the last week, updated {updated_text}.",
+        digest_body, digest_head))
     simple = ('<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
               '</div></header></div><main id="main" class="doc"><h1>{h}</h1><p>{p}</p><p><a class="btn dark" href="/">Back to the homepage</a></p></main>')
     (out / "welcome").mkdir()
@@ -378,7 +471,8 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         simple.format(h="Page not found", p="That page does not exist or has moved."), '<meta name="robots" content="noindex">'))
     today = updated.strftime("%Y-%m-%d")
     urls = "".join(f"<url><loc>{cfg['site_url']}{p}</loc><lastmod>{today}</lastmod></url>"
-                   for p in ["/", "/tenders/"] + [p["path"] for p in pages] + ["/privacy/", "/terms/"])
+                   for p in ["/", "/this-week/", "/tenders/"] + [p["path"] for p in pages]
+                   + ["/how-it-works/", "/example-alert/", "/privacy/", "/terms/"])
     (out / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n')
     (out / "robots.txt").write_text(
         "User-agent: *\nAllow: /\n\n"
@@ -393,12 +487,15 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         "filtered by region and type of work and scored out of 100 for how well each suits a smaller firm.\n\n"
         f"- Open tenders tracked on {updated_text}: {int(stats['open_count']):,}\n"
         f"- By region: {regions}\n- By type of work: {cats}\n"
-        "- Source: Find a Tender, the official UK notice service, checked daily. Open Government Licence v3.0.\n"
+        "- Sources: Find a Tender and Contracts Finder, the official UK notice services, checked daily. Open Government Licence v3.0.\n"
         "- Plans: Free (3 tenders a week), Basic £29 a month, Professional £79 a month, Premium £149 a month. Cancel any time.\n"
         f"- Contact: {cfg['contact_email']}\n\n"
         "## Pages\n\n"
         f"- [Home]({cfg['site_url']}/): what the service does, live tender counts, plans and common questions\n"
+        f"- [This week's tenders]({cfg['site_url']}/this-week/): the ten highest-scoring tenders published in the last week\n"
         f"- [Browse tenders]({cfg['site_url']}/tenders/): open tenders by region and type of work, {len(pages)} pages\n"
+        f"- [How it works]({cfg['site_url']}/how-it-works/): data sources, daily checks, handling of changed and withdrawn notices, the scoring table, limits\n"
+        f"- [Example alert]({cfg['site_url']}/example-alert/): the weekly subscriber email with live tenders\n"
         f"- [Privacy notice]({cfg['site_url']}/privacy/)\n- [Terms of service]({cfg['site_url']}/terms/)\n")
 
 

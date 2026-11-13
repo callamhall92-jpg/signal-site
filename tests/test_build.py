@@ -93,7 +93,7 @@ def test_listing_pages(tmp_path):
     assert "<h1>Roofing tenders in the South East</h1>" in both and "/tenders/roofing/scotland/" in both
     assert "Roofing tenders in Scotland" in (out / "tenders" / "roofing" / "scotland" / "index.html").read_text()
     site = (out / "sitemap.xml").read_text()
-    assert "/tenders/roofing/south-east/" in site and site.count("<url>") == 4 + 8
+    assert "/tenders/roofing/south-east/" in site and site.count("<url>") == 7 + 8
     home = (out / "index.html").read_text()
     assert '<a href="/tenders/south-east/">South East<span>59</span></a>' in home
 
@@ -131,3 +131,21 @@ def test_analytics_on_public_pages_only(tmp_path):
         assert "cloudflareinsights" not in (tmp_path / private / "index.html").read_text(), private
     build.build(stats, {**cfg, "analytics_token": ""}, tmp_path)
     assert "cloudflareinsights" not in (tmp_path / "index.html").read_text()
+
+
+def test_how_it_works_example_alert_and_weekly_digest(tmp_path):
+    import build
+    cfg = json.loads((build.ROOT / "config.json").read_text())
+    stats = json.loads((build.ROOT / "tests" / "sample_stats.json").read_text())
+    build.build(stats, cfg, tmp_path)
+    how = (tmp_path / "how-it-works" / "index.html").read_text()
+    assert "Contracts Finder" in how and "up to 30 points" in how and "does not write or submit bids" in how.replace("It does", "does")
+    alert = (tmp_path / "example-alert" / "index.html").read_text()
+    assert "Fit with your work 30/30" in alert and "Not stated in the notice: where the work is" in alert
+    week = (tmp_path / "this-week" / "index.html").read_text()
+    assert "Flat roof replacement, sports hall" in week and "javascript:" not in week and "Injected" not in week
+    sitemap = (tmp_path / "sitemap.xml").read_text()
+    assert all(f"/{p}/</loc>" in sitemap for p in ("this-week", "how-it-works", "example-alert"))
+    build.build({**stats, "digest": [], "sample": []}, cfg, tmp_path)
+    assert "being put together" in (tmp_path / "this-week" / "index.html").read_text()
+    assert "being refreshed" in (tmp_path / "example-alert" / "index.html").read_text()
