@@ -135,7 +135,7 @@ def category_slug(category: str) -> str:
 
 
 HEADER = ('<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
-          '<nav class="main" aria-label="Main"><a href="/this-week/">This week</a><a href="/tenders/">Browse tenders</a><a href="/how-it-works/">How it works</a><a href="/#pricing">Pricing</a>'
+          '<nav class="main" aria-label="Main"><a href="/this-week/">This week</a><a href="/tenders/">Browse tenders</a><a href="/how-it-works/">How it works</a><a href="/#pricing">Pricing</a><a href="/login/">Sign in</a>'
           '<a class="btn small" href="/#start">Start free</a></nav></div></header></div>')
 
 
@@ -449,6 +449,49 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<button class="btn dark" type="submit">Save my choices</button>'
         '<p class="msg" id="pref-msg" role="status" aria-live="polite"></p></form></main>'
         '<script src="/preferences.js" defer></script>', '<meta name="robots" content="noindex">'))
+    login_form = (
+        f'<form id="login" class="doc-form" data-api="{html.escape(cfg["login_url"], quote=True)}">'
+        '<label for="login-email">Email address</label>'
+        '<input id="login-email" name="email" type="email" autocomplete="email" required>'
+        '<input name="website" type="text" tabindex="-1" autocomplete="off" hidden>'
+        '<button class="btn" type="submit">Email me a sign-in link</button></form>'
+        '<p id="login-msg" role="status"></p>')
+    (out / "login").mkdir()
+    (out / "login" / "index.html").write_text(page(
+        base, cfg, "/login/", "Sign in | Noticehawk", "Sign in to your Noticehawk account with a link sent to your email.",
+        HEADER + '<main id="main" class="doc"><h1>Sign in</h1>'
+        '<p class="lede dark">For customers on a paid plan. Enter the email address you subscribed with and we will send you a sign-in link. There is no password to remember.</p>'
+        + login_form + '<p class="fine">On the free plan? Your alerts arrive by email every Monday; there is nothing to sign in to.</p>'
+        '</main><script src="/login.js" defer></script>', '<meta name="robots" content="noindex">'))
+    (out / "account").mkdir()
+    (out / "account" / "index.html").write_text(page(
+        base, cfg, "/account/", "Your account | Noticehawk", "Your live tender matches.",
+        HEADER + f'<main id="main" class="doc wide" data-api="{html.escape(cfg["account_url"], quote=True)}" '
+        f'data-shortlist="{html.escape(cfg["shortlist_url"], quote=True)}">'
+        '<p id="loading">Loading your tenders…</p>'
+        '<div id="problem" hidden><h1 id="problem-title"></h1><p id="problem-text"></p>' + login_form + '</div>'
+        '<div id="app" hidden><h1>My tenders</h1>'
+        '<p class="fine"><span id="plan"></span> · <a id="prefs" href="/preferences/">Change regions, type of work or contract size</a></p>'
+        '<p id="setup" class="check" hidden>You have not chosen your regions and type of work yet, so there is nothing to show. Use the link above to choose them.</p>'
+        '<div class="tabs" role="tablist"><button type="button" role="tab" id="tab-tenders">Open tenders</button>'
+        '<button type="button" role="tab" id="tab-coming">Coming soon</button>'
+        '<button type="button" role="tab" id="tab-renewals">Renewals</button></div>'
+        '<div id="filters" class="filters">'
+        '<label>Region<select id="f-region"><option value="">All yours</option></select></label>'
+        '<label>Type of work<select id="f-type"><option value="">All yours</option></select></label>'
+        '<label>Closing<select id="f-days"><option value="">Any time</option><option value="7">Within 7 days</option>'
+        '<option value="14">Within 14 days</option><option value="30">Within 30 days</option></select></label>'
+        '<label>Score<select id="f-score"><option value="0">Any</option><option value="60">60 and over</option>'
+        '<option value="75">75 and over</option><option value="90">90 and over</option></select></label>'
+        '<label>Value<select id="f-size"><option value="">Any</option><option value="0-50000">Under £50k</option>'
+        '<option value="50000-250000">£50k to £250k</option><option value="250000-1000000">£250k to £1m</option>'
+        '<option value="1000000-">Over £1m</option></select></label>'
+        '<label>Buyer or keyword<input id="f-text" type="search" placeholder="e.g. Kent County Council"></label>'
+        '<label class="check"><input id="f-short" type="checkbox"><span>My shortlist only</span></label></div>'
+        '<p class="fine"><span id="count"></span> <a id="download" hidden>Download as a spreadsheet</a></p>'
+        '<div id="list" class="mail"></div>'
+        '<p class="fine">Scores and notes are a guide drawn from the published notice. Always check the official notice and the buyer\'s documents before you bid.</p>'
+        '</div></main><script src="/account.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "shortlist").mkdir()
     (out / "shortlist" / "index.html").write_text(page(
         base, cfg, "/shortlist/", "Your shortlist | Noticehawk", "Deadline reminders for a tender on your shortlist.",

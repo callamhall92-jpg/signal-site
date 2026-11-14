@@ -185,3 +185,16 @@ def test_preferences_page_offers_contract_size(tmp_path):
     assert 'id="fit" hidden' in page and '<option value="250000">£250,000</option>' in page
     script = (tmp_path / "preferences.js").read_text()
     assert "body.max_value" in script and "fit_bad_range" in script
+
+
+def test_login_and_account_pages(tmp_path):
+    import build
+    cfg = json.loads((build.ROOT / "config.json").read_text())
+    build.build(json.loads((build.ROOT / "tests" / "sample_stats.json").read_text()), cfg, tmp_path)
+    login = (tmp_path / "login" / "index.html").read_text()
+    account = (tmp_path / "account" / "index.html").read_text()
+    assert 'data-api="https://wboavagwignktkodqvwa.supabase.co/functions/v1/login"' in login and "noindex" in login
+    assert 'id="f-region"' in account and "noindex" in account and "cloudflareinsights" not in account
+    assert "/account/</loc>" not in (tmp_path / "sitemap.xml").read_text()
+    assert 'href="/login/"' in (tmp_path / "index.html").read_text()
+    assert (tmp_path / "account.js").exists() and (tmp_path / "login.js").exists()

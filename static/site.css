@@ -137,3 +137,17 @@ fieldset p.fine{margin:4px 0 10px}
 .mail-item .score{align-self:flex-start;flex:none}
 .mail-foot{padding:14px 20px;font-size:13px;color:var(--grey)}
 .doc .tablebox{margin:16px 0}
+
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 12px}
+.tabs button{font:inherit;font-weight:700;padding:10px 16px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:8px 0 16px;align-items:end}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700}
+.filters select,.filters input[type=search]{font:inherit;font-weight:400;padding:10px;border:1px solid var(--line);border-radius:4px;background:#fff;min-height:44px}
+.filters label.check{flex-direction:row;align-items:center;gap:8px;min-height:44px}
+.mail-item .read{font-size:14px;color:var(--ink)}
+.mail-item .linkish{font:inherit;font-size:13px;font-weight:700;color:var(--ink);text-decoration:underline;background:none;border:0;padding:8px 0;cursor:pointer}
+.mail .empty{padding:24px 20px;margin:0;color:var(--grey)}
+.score.mid{background:#E8ECF1;color:var(--ink)}.score.low{background:#F3F4F6;color:var(--grey)}
+.doc-form{display:flex;flex-direction:column;gap:10px;max-width:420px;margin:20px 0}
+.doc-form input[type=email]{font:inherit;padding:12px;border:1px solid var(--line);border-radius:4px;min-height:44px}
