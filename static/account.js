@@ -2,7 +2,7 @@
 (function () {
   var main = document.getElementById("main");
   var token = new URLSearchParams(location.search).get("token") || "";
-  var state = { data: null, tab: "tenders" };
+  var state = { data: null, tab: "tenders", base: null };
   var LABELS = { new_build: "New build", refurbishment: "Refurbishment", repairs_maintenance: "Repairs and maintenance",
     roofing: "Roofing", mechanical_electrical: "Mechanical and electrical", groundworks_civils: "Groundworks and civils",
     design_professional: "Design and professional" };
@@ -75,7 +75,9 @@
     if (url) { a.href = url; a.rel = "noopener"; a.target = "_blank"; }
     body.appendChild(a);
     body.appendChild(el("p", null, t.buyer || "Buyer not stated"));
-    body.appendChild(el("p", null, [t.region, LABELS[t.category], money(t.value), "closes " + nice(t.deadline) + " (" + t.days + " day" + (t.days === 1 ? "" : "s") + ")"].filter(Boolean).join(" | ")));
+    var dist = distanceOf(t);
+    body.appendChild(el("p", null, [t.council ? t.council + (t.where === "buyer" ? " (buyer's address)" : "") : t.region,
+      dist === null ? null : Math.round(dist) + " miles away", LABELS[t.category], money(t.value), "closes " + nice(t.deadline) + " (" + t.days + " day" + (t.days === 1 ? "" : "s") + ")"].filter(Boolean).join(" | ")));
     if (t.note) line(body, "Our read", t.note, "read");
     intelLines(t.intel).forEach(function (l) { line(body, l[0], l[1]); });
     if (t.fitNote) line(body, "Check first", t.fitNote + ".", "check");
@@ -102,11 +104,38 @@
     return item;
   }
 
+  function area(t) { return t.county || t.council || null; }
+  function miles(a, b) {
+    var r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 3958.8 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  }
+  function distanceOf(t) {
+    if (!state.base || t.lat === null || t.lat === undefined) return null;
+    return miles(state.base, { lat: Number(t.lat), lon: Number(t.lon) });
+  }
+  function baseNote(text) { var n = $("base-note"); n.hidden = !text; n.textContent = text || ""; }
+  function setBase(raw) {
+    var pc = (raw || "").toUpperCase().replace(/\s+/g, "");
+    if (!pc) { state.base = null; baseNote(""); try { localStorage.removeItem("nh_base"); } catch (e) {} render(); return; }
+    if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?[0-9][A-Z]{2}$/.test(pc)) { state.base = null; baseNote("Enter a full UK postcode to filter by distance."); render(); return; }
+    fetch("https://api.postcodes.io/postcodes/" + encodeURIComponent(pc)).then(function (r) { return r.json(); }).then(function (b) {
+      if (!b || !b.result) { state.base = null; baseNote("We could not find that postcode."); render(); return; }
+      state.base = { lat: b.result.latitude, lon: b.result.longitude };
+      try { localStorage.setItem("nh_base", pc); } catch (e) {}
+      baseNote("Distances are measured in a straight line from " + b.result.postcode + " to the work site, or to the buyer's address where the notice gives no site.");
+      render();
+    }).catch(function () { state.base = null; baseNote("We could not look up that postcode just now. Try again shortly."); render(); });
+  }
   function filtered() {
     var d = state.data, region = $("f-region").value, type = $("f-type").value, days = Number($("f-days").value) || 0;
+    var county = $("f-county").value, council = $("f-council").value, within = Number($("f-miles").value) || 0;
     var min = Number($("f-score").value) || 0, size = $("f-size").value, text = $("f-text").value.trim().toLowerCase(), only = $("f-short").checked;
     return d.tenders.filter(function (t) {
       if (region && t.region !== region) return false;
+      if (county && area(t) !== county) return false;
+      if (council && t.council !== council) return false;
+      if (within && state.base) { var m = distanceOf(t); if (m === null || m > within) return false; }
       if (type && t.category !== type) return false;
       if (days && t.days > days) return false;
       if (t.score < min) return false;
@@ -121,8 +150,8 @@
   }
   function csv(rows) {
     function q(v) { v = v === null || v === undefined ? "" : String(v); return /^[=+\-@]/.test(v) ? "\"'" + v.replace(/"/g, '""') + "\"" : "\"" + v.replace(/"/g, '""') + "\""; }
-    var out = [["Score", "Title", "Buyer", "Region", "Type of work", "Value", "Closes", "Notice"].map(q).join(",")];
-    rows.forEach(function (t) { out.push([t.score, t.title, t.buyer, t.region, LABELS[t.category] || "", t.value, t.deadline, t.url].map(q).join(",")); });
+    var out = [["Score", "Title", "Buyer", "Region", "Council", "County", "Type of work", "Value", "Closes", "Notice"].map(q).join(",")];
+    rows.forEach(function (t) { out.push([t.score, t.title, t.buyer, t.region, t.council || "", area(t) || "", LABELS[t.category] || "", t.value, t.deadline, t.url].map(q).join(",")); });
     return URL.createObjectURL(new Blob(["﻿" + out.join("\r\n")], { type: "text/csv" }));
   }
   function render() {
@@ -159,9 +188,19 @@
     $("prefs").href = "/preferences/?token=" + encodeURIComponent(token);
     function uniq(key) { var s = {}; d.tenders.forEach(function (t) { if (t[key]) s[t[key]] = 1; }); return Object.keys(s).sort(); }
     fill($("f-region"), uniq("region")); fill($("f-type"), uniq("category"), LABELS);
+    var areas = {}; d.tenders.forEach(function (t) { if (area(t)) areas[area(t)] = 1; }); fill($("f-county"), Object.keys(areas).sort());
+    fill($("f-council"), uniq("council"));
+    $("f-county").addEventListener("input", function () {
+      var c = $("f-county").value, sel = $("f-council"), keep = {};
+      d.tenders.forEach(function (t) { if (t.council && (!c || area(t) === c)) keep[t.council] = 1; });
+      while (sel.options.length > 1) sel.remove(1);
+      fill(sel, Object.keys(keep).sort());
+    });
+    $("f-base").addEventListener("change", function () { setBase($("f-base").value); });
+    try { var saved = localStorage.getItem("nh_base"); if (saved) { $("f-base").value = saved; setBase(saved); } } catch (e) {}
     ["coming", "renewals"].forEach(function (k) { if (d[k] === null || d[k] === undefined) { $("tab-" + k).hidden = true; d[k] = []; } });
     if (d.needs_setup) $("setup").hidden = false;
-    ["f-region", "f-type", "f-days", "f-score", "f-size", "f-text", "f-short"].forEach(function (id) { $(id).addEventListener("input", render); });
+    ["f-region", "f-county", "f-council", "f-miles", "f-type", "f-days", "f-score", "f-size", "f-text", "f-short"].forEach(function (id) { $(id).addEventListener("input", render); });
     ["tenders", "coming", "renewals"].forEach(function (k) { $("tab-" + k).addEventListener("click", function () { state.tab = k; render(); }); });
     $("loading").hidden = true; $("app").hidden = false;
     render();
