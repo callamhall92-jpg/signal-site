@@ -108,6 +108,31 @@
     var main = LABELS[t.category], mine = (t.also || []).filter(function (a) { return a !== t.category && LABELS[a] && (state.data.trades || []).indexOf(a) !== -1; });
     return main && mine.length ? main + ", includes " + LABELS[mine[0]].toLowerCase() : main;
   }
+  var YEAR = "(?!(?:19|20)\\d\\d(?:[-/]\\d{2,4})?\\s)";
+  var MARKER = /^\s*(\(?\s*(itt|rfq|rfp|itq|eoi|pin|tender)\s*\)?\s*[-:\u2013\u2014]\s*|\(\s*(itt|rfq|rfp|itq)\s*\)\s*)/i;
+  var CODE_SEP = new RegExp("^\\s*" + YEAR + "[A-Za-z]*[A-Za-z0-9/._-]*\\d[A-Za-z0-9/._-]*\\s*[-:\u2013\u2014]\\s+");
+  var CODE_LONG = new RegExp("^\\s*" + YEAR + "[A-Za-z0-9/._-]*\\d{4,}[A-Za-z0-9/._-]*\\s+");
+  var TRAIL = /\s*\(\s*[A-Z0-9][A-Z0-9 \/._-]*\d[A-Z0-9 \/._-]*\)\s*$/;
+  function tidy(title) {
+    if (!title) return title || "";
+    var out = title.trim();
+    for (var i = 0; i < 3; i++) {
+      var before = out;
+      out = out.replace(MARKER, "").replace(CODE_SEP, "").replace(CODE_LONG, "");
+      if (out === before) break;
+    }
+    out = out.replace(TRAIL, "").replace(/^[\s\-\u2013\u2014:]+|[\s\-\u2013\u2014:]+$/g, "");
+    return out.length >= 8 ? out : title.trim();
+  }
+  function dedupe(list) {
+    var seen = {};
+    return list.filter(function (t) {
+      var key = (t.title || "").toLowerCase().replace(/[^a-z0-9]/g, "") + "|" + (t.deadline || "");
+      if (seen[key]) return false;
+      seen[key] = 1;
+      return true;
+    });
+  }
   function area(t) { return t.county || t.council || null; }
   function miles(a, b) {
     var r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
@@ -193,6 +218,8 @@
     values.forEach(function (v) { select.add(new Option(labels ? labels[v] || v : v, v)); });
   }
   function start(d) {
+    ["tenders", "coming", "renewals"].forEach(function (k) { (d[k] || []).forEach(function (t) { t.title = tidy(t.title); }); });
+    d.tenders = dedupe(d.tenders || []);
     var low = d.min_value === null ? null : Number(d.min_value), high = d.max_value === null ? null : Number(d.max_value);
     d.tenders = personalise(d.tenders || [], low, high);
     state.data = d;

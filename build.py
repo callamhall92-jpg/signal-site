@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 import shutil
 import sys
 import urllib.request
@@ -427,7 +428,31 @@ def page(base: str, cfg: dict, path: str, title: str, description: str, body: st
         analytics=analytics(cfg, head_extra))
 
 
+# Readable titles: the buyer's reference codes and procedure markers dropped (same rules as the alert emails).
+_MARKER = re.compile(r"^\s*(\(?\s*(itt|rfq|rfp|itq|eoi|pin|tender)\s*\)?\s*[-:–—]\s*|\(\s*(itt|rfq|rfp|itq)\s*\)\s*)", re.I)
+# A leading code: one token with a digit, then a separator; or a token with four or more digits, then a space.
+_CODE_SEP = re.compile(r"^\s*(?!(?:19|20)\d\d(?:[-/]\d{2,4})?\s)[A-Za-z]*[A-Za-z0-9/._-]*\d[A-Za-z0-9/._-]*\s*[-:–—]\s+")
+_CODE_LONG = re.compile(r"^\s*(?!(?:19|20)\d\d(?:[-/]\d{2,4})?\s)[A-Za-z0-9/._-]*\d{4,}[A-Za-z0-9/._-]*\s+")
+_TRAIL = re.compile(r"\s*\(\s*[A-Z0-9][A-Z0-9 /._-]*\d[A-Z0-9 /._-]*\)\s*$")
+
+
+def tidy_title(title: str | None) -> str:
+    if not title:
+        return title or ""
+    out = title.strip()
+    for _ in range(3):
+        before = out
+        out = _MARKER.sub("", out)
+        out = _CODE_SEP.sub("", out)
+        out = _CODE_LONG.sub("", out)
+        if out == before:
+            break
+    out = _TRAIL.sub("", out).strip(" -–—:")
+    return out if len(out) >= 8 else title.strip()
+
+
 def build(stats: dict, cfg: dict, out: Path) -> None:
+    stats = {**stats, **{k: [{**r, "title": tidy_title(r.get("title"))} for r in (stats.get(k) or [])] for k in ("sample", "listings", "digest")}}
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(ROOT / "static", out)
