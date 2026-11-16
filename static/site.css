@@ -141,9 +141,10 @@ fieldset p.fine{margin:4px 0 10px}
 .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 12px}
 .tabs button{font:inherit;font-weight:700;padding:10px 16px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.filters[hidden]{display:none}
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:8px 0 16px;align-items:end}
 .filters label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700}
-.filters select,.filters input[type=search]{font:inherit;font-weight:400;padding:10px;border:1px solid var(--line);border-radius:4px;background:#fff;min-height:44px}
+.filters select,.filters input[type=search],.filters input[type=text]{font:inherit;font-weight:400;padding:10px;border:1px solid var(--line);border-radius:4px;background:#fff;min-height:44px}
 .filters label.check{flex-direction:row;align-items:center;gap:8px;min-height:44px}
 .mail-item .read{font-size:14px;color:var(--ink)}
 .mail-item .linkish{font:inherit;font-size:13px;font-weight:700;color:var(--ink);text-decoration:underline;background:none;border:0;padding:8px 0;cursor:pointer}

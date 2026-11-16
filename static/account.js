@@ -127,6 +127,14 @@
       render();
     }).catch(function () { state.base = null; baseNote("We could not look up that postcode just now. Try again shortly."); render(); });
   }
+  function emptyText(d) {
+    var other = [];
+    if (d.coming && d.coming.length) other.push(d.coming.length + " planned in Coming soon");
+    if (d.renewals && d.renewals.length) other.push(d.renewals.length + " ending soon in Renewals");
+    return "No tenders are open for your regions and type of work today. New ones are added every day" +
+      (other.length ? ", and there are " + other.join(" and ") : "") +
+      ". To see more, add a region or type of work with the link at the top of the page.";
+  }
   function filtered() {
     var d = state.data, region = $("f-region").value, type = $("f-type").value, days = Number($("f-days").value) || 0;
     var county = $("f-county").value, council = $("f-council").value, within = Number($("f-miles").value) || 0;
@@ -163,7 +171,7 @@
       rows = filtered();
       $("count").textContent = rows.length + " of " + d.tenders.length + " open tender" + (d.tenders.length === 1 ? "" : "s");
       rows.slice(0, 150).forEach(function (t) { list.appendChild(card(t)); });
-      if (!rows.length) list.appendChild(el("p", "empty", d.tenders.length ? "Nothing matches those filters." : "No open tenders match your regions and type of work right now."));
+      if (!rows.length) list.appendChild(el("p", "empty", d.tenders.length ? "Nothing matches those filters." : emptyText(d)));
       if (rows.length > 150) list.appendChild(el("p", "empty", "Showing the best 150. Narrow the filters to see the rest."));
       var dl = $("download");
       if (dl) { dl.hidden = !d.csv || !rows.length; if (d.csv && rows.length) { dl.href = csv(rows); dl.download = "noticehawk-tenders.csv"; } }
