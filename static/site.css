@@ -152,3 +152,25 @@ fieldset p.fine{margin:4px 0 10px}
 .score.mid{background:#E8ECF1;color:var(--ink)}.score.low{background:#F3F4F6;color:var(--grey)}
 .doc-form{display:flex;flex-direction:column;gap:10px;max-width:420px;margin:20px 0}
 .doc-form input[type=email]{font:inherit;padding:12px;border:1px solid var(--line);border-radius:4px;min-height:44px}
+
+/* Phones: one-line header with a sideways-scrolling menu, and tender tables as stacked rows. */
+@media (max-width:640px){
+  header .wrap{gap:10px;padding-top:12px;padding-bottom:10px}
+  nav.main{width:100%;flex-wrap:nowrap;overflow-x:auto;gap:18px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav.main::-webkit-scrollbar{display:none}
+  nav.main a{white-space:nowrap;font-size:14px;padding:8px 0}
+  nav.main a.btn{margin-left:auto;padding:8px 14px}
+  table{min-width:0}
+  table.rows thead{display:none}
+  table.rows,table.rows tbody{display:block}
+  table.rows tr{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;padding:14px 16px;border-bottom:1px solid var(--night-line)}
+  .tablebox.light table.rows tr{border-color:var(--line)}
+  table.rows tr:last-child{border-bottom:0}
+  table.rows td{display:block;padding:0;border:0}
+  table.rows td:has(.score){order:0}
+  table.rows td:has(a){flex:1 1 70%;min-width:0}
+  table.rows td.muted{flex:1 1 100%;font-size:14px}
+  table.rows td.num{font-size:14px}
+  table.rows td[data-label]::before{content:attr(data-label) " ";color:var(--grey);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+  .stats{grid-template-columns:1fr 1fr}
+}

@@ -44,7 +44,7 @@ FAQ = [
 
 
 def money(value) -> str:
-    if value is None:
+    if value is None or float(value) < 500:      # buyers sometimes enter £0 or £1 as a placeholder
         return "Not stated"
     value = float(value)
     for limit, div, unit in ((1e9, 1e9, "bn"), (1e6, 1e6, "m"), (1e3, 1e3, "k")):
@@ -69,8 +69,8 @@ def sample_rows(rows: list[dict]) -> str:
             f'<td><a href="{html.escape(url, quote=True)}" rel="noopener">{html.escape(r["title"])}</a>'
             f'<small>{html.escape(place)}</small></td>'
             f'<td class="muted">{html.escape(r.get("buyer") or "")}</td>'
-            f'<td class="num">{money(r.get("value"))}</td>'
-            f'<td class="num">{days} day{"" if days == 1 else "s"}</td></tr>')
+            f'<td class="num" data-label="Value">{money(r.get("value"))}</td>'
+            f'<td class="num" data-label="Closes in">{days} day{"" if days == 1 else "s"}</td></tr>')
     if not out:
         out.append('<tr><td colspan="5" class="muted">This week\'s examples are being refreshed.</td></tr>')
     return "\n".join(out)
@@ -151,7 +151,7 @@ def listing_pages(stats: dict) -> list[dict]:
     rows.sort(key=lambda r: (int(r["days"]), r["title"]))      # soonest deadline first
     pages = []
     for cat in WORK_TYPES:
-        hits = [r for r in rows if r["category"] == cat]
+        hits = [r for r in rows if r["category"] == cat or cat in (r.get("also") or [])]
         if hits:
             pages.append({"path": f"/tenders/{category_slug(cat)}/", "category": cat, "region": None, "rows": hits})
     for region in REGIONS:
@@ -159,7 +159,7 @@ def listing_pages(stats: dict) -> list[dict]:
         if hits:
             pages.append({"path": f"/tenders/{slug(region)}/", "category": None, "region": region, "rows": hits})
         for cat in WORK_TYPES:
-            both = [r for r in hits if r["category"] == cat]
+            both = [r for r in hits if r["category"] == cat or cat in (r.get("also") or [])]
             if both:
                 pages.append({"path": f"/tenders/{category_slug(cat)}/{slug(region)}/", "category": cat, "region": region, "rows": both})
     return pages
@@ -174,15 +174,24 @@ def listing_title(page: dict) -> str:
     return f"{work} tenders" + (f" {place_phrase(page['region'])}" if page["region"] else " in the UK")
 
 
+def work_note(r: dict, page_category: str | None) -> str | None:
+    """On an all-work page, the tender's type of work; on a type-of-work page, only when it is there as an extra."""
+    if not page_category:
+        return CATEGORY_LABELS.get(r["category"])
+    if r["category"] != page_category and r["category"] in CATEGORY_LABELS:
+        return f'{CATEGORY_LABELS[r["category"]]}, includes {CATEGORY_LABELS[page_category].lower()}'
+    return None
+
+
 def render_listing(page: dict, pages: list[dict], cfg: dict, updated_text: str) -> tuple[str, str]:
     rows, title = page["rows"], listing_title(page)
     shown = rows[:12]
     body_rows = "\n".join(
         f'<tr><td><a href="{html.escape(r["url"], quote=True)}" rel="noopener">{html.escape(r["title"])}</a>'
-        f'<small>{html.escape(" · ".join(x for x in (None if page["region"] else r["region"], None if page["category"] else CATEGORY_LABELS[r["category"]]) if x))}</small></td>'
+        f'<small>{html.escape(" · ".join(x for x in (None if page["region"] else r["region"], work_note(r, page["category"])) if x))}</small></td>'
         f'<td class="muted">{html.escape(r.get("buyer") or "Not stated")}</td>'
-        f'<td class="num">{money(r.get("value"))}</td>'
-        f'<td class="num">{int(r["days"])} day{"" if int(r["days"]) == 1 else "s"}</td></tr>' for r in shown)
+        f'<td class="num" data-label="Value">{money(r.get("value"))}</td>'
+        f'<td class="num" data-label="Closes in">{int(r["days"])} day{"" if int(r["days"]) == 1 else "s"}</td></tr>' for r in shown)
     n = len(rows)
     more = (f'<p class="more">Showing the {len(shown)} closing soonest of {n}. Subscribers get every one, scored for a firm their size.</p>'
             if n > len(shown) else "")
@@ -213,7 +222,7 @@ def render_listing(page: dict, pages: list[dict], cfg: dict, updated_text: str) 
             f'<p class="trail">{trail}</p><h1>{html.escape(title)}</h1>'
             f'<p class="lede dark">{n} open public-sector tender{"" if n == 1 else "s"} on {updated_text}, '
             f'checked daily against the official notice services. The next closes in {int(rows[0]["days"])} days.</p>'
-            '<div class="tablebox light"><table><thead><tr><th scope="col">Tender</th><th scope="col">Buyer</th>'
+            '<div class="tablebox light"><table class="rows"><thead><tr><th scope="col">Tender</th><th scope="col">Buyer</th>'
             f'<th scope="col">Value</th><th scope="col">Closes</th></tr></thead><tbody>{body_rows}</tbody></table></div>'
             f'{more}<div class="cta-box"><div><strong>Get these by email every Monday.</strong>'
             '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
@@ -276,8 +285,8 @@ def weekly_digest(stats: dict, updated_text: str, cfg: dict) -> tuple[str, str]:
         f'<tr><td><a href="{html.escape(r["url"], quote=True)}" rel="noopener">{html.escape(r["title"])}</a>'
         f'<small>{html.escape(" · ".join(x for x in (r.get("region"), CATEGORY_LABELS.get(r.get("category"), "")) if x))}</small></td>'
         f'<td class="muted">{html.escape(r.get("buyer") or "Not stated")}</td>'
-        f'<td class="num">{money(r.get("value"))}</td>'
-        f'<td class="num">{int(r["days"])} days</td></tr>' for r in rows)
+        f'<td class="num" data-label="Value">{money(r.get("value"))}</td>'
+        f'<td class="num" data-label="Closes in">{int(r["days"])} days</td></tr>' for r in rows)
     if not rows:
         body_rows = '<tr><td colspan="4" class="muted">This week\'s list is being put together.</td></tr>'
     ld = {"@context": "https://schema.org", "@type": "ItemList", "name": "Construction tenders worth a look this week",
@@ -287,7 +296,7 @@ def weekly_digest(stats: dict, updated_text: str, cfg: dict) -> tuple[str, str]:
     body = (HEADER + '<main id="main" class="doc wide"><h1>Construction tenders worth a look this week</h1>'
             f'<p class="lede dark">The {len(rows) or "ten"} highest-scoring UK public-sector construction and building maintenance tenders '
             f'published in the last week, as of {updated_text}. Each links to its official notice.</p>'
-            '<div class="tablebox light"><table><thead><tr><th scope="col">Tender</th><th scope="col">Buyer</th>'
+            '<div class="tablebox light"><table class="rows"><thead><tr><th scope="col">Tender</th><th scope="col">Buyer</th>'
             f'<th scope="col">Value</th><th scope="col">Closes in</th></tr></thead><tbody>{body_rows}</tbody></table></div>'
             '<p class="more">This list is the same for everyone. Subscribers get the tenders for their own regions and type of work, with a score for each. '
             '<a href="/example-alert/">See an example alert</a>.</p>'
