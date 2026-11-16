@@ -518,11 +518,11 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p><button class="btn dark" id="go" type="button">Unsubscribe me</button></p></div>'
         '<p class="msg" id="out" role="status" aria-live="polite"></p>'
         f'<p>Trouble with this page? Email <a href="mailto:{html.escape(cfg["contact_email"])}">{html.escape(cfg["contact_email"])}</a> and we will do it for you.</p></main>'
-        f'<script>(function(){{var t=new URLSearchParams(location.search).get("token"),o=document.getElementById("out"),a=document.getElementById("ask");'
+        f'<script>(function(){{var q=new URLSearchParams(location.search),t=q.get("token"),w=q.get("who")==="p"?"&who=p":"",o=document.getElementById("out"),a=document.getElementById("ask");'
         'function say(m,ok){o.textContent=m;o.className="msg "+(ok?"good":"bad")}'
         'if(!t){a.hidden=true;say("This link is incomplete. Open the unsubscribe link from one of our emails again.",false);return}'
         'document.getElementById("go").addEventListener("click",function(){this.disabled=true;'
-        f'fetch({json.dumps(cfg["unsubscribe_url"])}+"?token="+encodeURIComponent(t),{{method:"POST"}})'
+        f'fetch({json.dumps(cfg["unsubscribe_url"])}+"?token="+encodeURIComponent(t)+w,{{method:"POST"}})'
         '.then(function(r){if(r.ok){a.hidden=true;say("Done. You will not get any more emails from us.",true)}'
         'else{say("That did not work. Please try again, or email us.",false)}})'
         '.catch(function(){say("That did not work. Check your connection and try again.",false)})})})();</script>',
