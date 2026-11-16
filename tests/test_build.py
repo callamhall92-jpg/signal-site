@@ -231,3 +231,10 @@ def test_signup_form_carries_weekly_rates(tmp_path):
     build.build(dict(STATS, rates=[{"region": "South East", "category": "roofing", "per_week": 0.5}]), cfg, tmp_path / "dist")
     page = (tmp_path / "dist" / "index.html").read_text()
     assert 'data-rates="{&quot;South East|roofing&quot;: 0.5}"' in page and 'id="s-rate"' in page
+
+
+def test_feedback_page(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    page = (tmp_path / "dist" / "feedback" / "index.html").read_text()
+    assert 'data-reason="wrong_area"' in page and "noindex" in page and "/feedback.js" in page
+    assert 'data-feedback="https://' in (tmp_path / "dist" / "account" / "index.html").read_text()

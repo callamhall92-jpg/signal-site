@@ -606,7 +606,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     (out / "account" / "index.html").write_text(page(
         base, cfg, "/account/", "Your account | Noticehawk", "Your live tender matches.",
         HEADER + f'<main id="main" class="doc wide" data-api="{html.escape(cfg["account_url"], quote=True)}" '
-        f'data-shortlist="{html.escape(cfg["shortlist_url"], quote=True)}">'
+        f'data-shortlist="{html.escape(cfg["shortlist_url"], quote=True)}" data-feedback="{html.escape(cfg["feedback_url"], quote=True)}">'
         '<p id="loading">Loading your tenders…</p>'
         '<div id="problem" hidden><h1 id="problem-title"></h1><p id="problem-text"></p>' + login_form + '</div>'
         '<div id="app" hidden><h1>My tenders</h1>'
@@ -646,6 +646,19 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<a class="btn outline" id="sl-cal" href="#" download="tender-deadline.ics">Add the deadline to my calendar</a></p>'
         '<p id="sl-undo-wrap" hidden><button class="linkish" id="sl-undo" type="button">Take it off my shortlist</button></p>'
         '</main><script src="/shortlist.js" defer></script>', '<meta name="robots" content="noindex">'))
+    (out / "feedback").mkdir()
+    (out / "feedback" / "index.html").write_text(page(
+        base, cfg, "/feedback/", "Not for me | Noticehawk", "Tell us why a tender was not right for you.",
+        HEADER + f'<main id="main" class="doc" data-api="{html.escape(cfg["feedback_url"], quote=True)}">'
+        '<h1>Not for me</h1><p id="fb-text">Tell us why, and we will use it to send you better matches. It also hides the tender from your account page.</p>'
+        '<div id="fb-reasons" class="reasons">'
+        '<button class="btn outline" type="button" data-reason="not_my_work">Not my type of work</button>'
+        '<button class="btn outline" type="button" data-reason="wrong_area">Wrong area</button>'
+        '<button class="btn outline" type="button" data-reason="too_big">Too big for us</button>'
+        '<button class="btn outline" type="button" data-reason="too_small">Too small to be worth it</button>'
+        '<button class="btn outline" type="button" data-reason="not_construction">Not construction work at all</button></div>'
+        '<p class="msg" id="fb-msg" role="status" aria-live="polite"></p>'
+        '<p><a href="/login/">Go to my account</a></p></main><script src="/feedback.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "unsubscribe").mkdir()
     (out / "unsubscribe" / "index.html").write_text(page(
         base, cfg, "/unsubscribe/", "Unsubscribe | Noticehawk", "Stop Noticehawk emails.",

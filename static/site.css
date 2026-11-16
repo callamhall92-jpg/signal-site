@@ -182,3 +182,6 @@ fieldset p.fine{margin:4px 0 10px}
   table.stack td:first-child{font-weight:700;font-size:16px}
   table.stack td a{display:inline}
 }
+.reasons{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.card-actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:10px}
+.linkish{background:none;border:0;padding:0;font:inherit;color:var(--grey);text-decoration:underline;cursor:pointer}

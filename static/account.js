@@ -93,9 +93,40 @@
         .then(function (r) { if (r.ok) { t.shortlisted = !t.shortlisted; render(); } else { b.disabled = false; b.textContent = "That did not save. Try again"; } })
         .catch(function () { b.disabled = false; b.textContent = "That did not save. Try again"; });
     });
-    body.appendChild(b);
+    var actions = el("div", "card-actions");
+    actions.appendChild(b);
+    var nope = el("button", "linkish", "Not for me");
+    nope.type = "button";
+    nope.addEventListener("click", function () {
+      nope.disabled = true;
+      fetch(main.dataset.feedback, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, record: t.id, reason: "not_my_work" }) })
+        .then(function (r) {
+          if (!r.ok) { nope.disabled = false; nope.textContent = "That did not save. Try again"; return; }
+          state.data.tenders = state.data.tenders.filter(function (x) { return x.id !== t.id; });
+          state.hidden = t;
+          render();
+        })
+        .catch(function () { nope.disabled = false; nope.textContent = "That did not save. Try again"; });
+    });
+    actions.appendChild(nope);
+    body.appendChild(actions);
     item.appendChild(body);
     return item;
+  }
+  function undoBar() {
+    var t = state.hidden;
+    if (!t) return null;
+    var bar = el("p", "msg good", "Hidden “" + t.title + "”. ");
+    var u = el("button", "linkish", "Undo");
+    u.type = "button";
+    u.addEventListener("click", function () {
+      fetch(main.dataset.feedback, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token, record: t.id, reason: "undo" }) })
+        .then(function (r) { if (r.ok) { state.data.tenders.push(t); state.hidden = null; render(); } });
+    });
+    bar.appendChild(u);
+    return bar;
   }
   function simpleCard(title, url, lines) {
     var item = el("div", "mail-item"), body = el("div"), u = safeUrl(url), a = el(u ? "a" : "span", null, title);
@@ -212,6 +243,8 @@
     $("filters").hidden = state.tab !== "tenders";
     if (state.tab === "tenders") {
       rows = filtered();
+      var undo = undoBar();
+      if (undo) list.appendChild(undo);
       $("count").textContent = rows.length + " of " + d.tenders.length + " open tender" + (d.tenders.length === 1 ? "" : "s");
       rows.slice(0, 150).forEach(function (t) { list.appendChild(card(t)); });
       if (!rows.length) list.appendChild(el("p", "empty", d.tenders.length ? "Nothing matches those filters." : emptyText(d)));

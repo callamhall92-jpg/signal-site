@@ -9,5 +9,6 @@
   "shortlist_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/shortlist",
   "analytics_token": "603ed6a7710144c883381ca4714c11b5",
   "login_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/login",
-  "account_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/account"
+  "account_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/account",
+  "feedback_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/feedback"
 }
