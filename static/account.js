@@ -49,7 +49,8 @@
     var b = i.buyer;
     if (b) {
       var kind = b.same_type ? "contracts of this type" : "construction contracts", firms = b.winners + " different firm" + (b.winners === 1 ? "" : "s"), text;
-      if (b.pattern === "one_firm") text = b.top_winner + " won " + b.top_wins + " of this buyer's last " + b.awards + " " + kind + ". A hard field to break into";
+      if (b.pattern === "framework") text = b.top_winner + " won " + b.top_wins + " of this buyer's last " + b.awards + " " + kind + ", mostly as call-offs from a framework. New work here usually needs a place on that framework";
+      else if (b.pattern === "one_firm") text = b.top_winner + " won " + b.top_wins + " of this buyer's last " + b.awards + " " + kind + ". A hard field to break into";
       else if (b.pattern === "regulars") text = Math.round(b.repeat_share * 100) + "% of this buyer's last " + b.awards + " " + kind + " went to firms it had used before (" + firms + " in all). It favours its regulars";
       else if (b.pattern === "open") text = "This buyer's last " + b.awards + " " + kind + " went to " + firms + ". An open field";
       else text = b.awards + " recent " + kind + ", awarded to " + firms;
