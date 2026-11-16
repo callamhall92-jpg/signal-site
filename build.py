@@ -17,7 +17,8 @@ CATEGORY_LABELS = {
     "roofing": "Roofing", "groundworks_civils": "Groundworks and civils",
     "design_professional": "Design and professional services", "other": "Other",
 }
-NOTICE_PREFIXES = ("https://www.find-tender.service.gov.uk/", "https://www.contractsfinder.service.gov.uk/")
+NOTICE_PREFIXES = ("https://www.find-tender.service.gov.uk/", "https://www.contractsfinder.service.gov.uk/",
+                   "https://www.publiccontractsscotland.gov.uk/")
 
 FAQ = [
     ("What is Noticehawk?",
@@ -541,7 +542,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         "filtered by region and type of work and scored out of 100 for how well each suits a smaller firm.\n\n"
         f"- Open tenders tracked on {updated_text}: {int(stats['open_count']):,}\n"
         f"- By region: {regions}\n- By type of work: {cats}\n"
-        "- Sources: Find a Tender and Contracts Finder, the official UK notice services, checked daily. Open Government Licence v3.0.\n"
+        "- Sources: Find a Tender, Contracts Finder and Public Contracts Scotland, the official UK notice services, checked daily. Open Government Licence v3.0.\n"
         "- Plans: Free (3 tenders a week), Basic £29 a month, Professional £79 a month, Premium £149 a month. Cancel any time.\n"
         f"- Contact: {cfg['contact_email']}\n\n"
         "## Pages\n\n"

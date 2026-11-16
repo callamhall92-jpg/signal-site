@@ -18,7 +18,7 @@
   }
   function nice(iso) { return new Date(iso + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }); }
   function monthYear(iso) { return new Date(iso + "T12:00:00Z").toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }); }
-  function safeUrl(u) { return /^https:\/\/www\.(find-tender|contractsfinder)\.service\.gov\.uk\//.test(u || "") ? u : null; }
+  function safeUrl(u) { return /^https:\/\/www\.((find-tender|contractsfinder)\.service\.gov\.uk|publiccontractsscotland\.gov\.uk)\//.test(u || "") ? u : null; }
 
   // The same adjustment the weekly email makes for the contract sizes a customer says they take on.
   function sizePoints(value, low, high, full) {
