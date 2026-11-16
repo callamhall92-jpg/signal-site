@@ -658,7 +658,9 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         f"- [Browse tenders]({cfg['site_url']}/tenders/): open tenders by region and type of work, {len(pages)} pages\n"
         f"- [How it works]({cfg['site_url']}/how-it-works/): data sources, daily checks, handling of changed and withdrawn notices, the scoring table, limits\n"
         f"- [Example alert]({cfg['site_url']}/example-alert/): the weekly subscriber email with live tenders\n"
-        f"- [Privacy notice]({cfg['site_url']}/privacy/)\n- [Terms of service]({cfg['site_url']}/terms/)\n")
+        + "".join(f"- [{t}]({cfg['site_url']}/guides/{s_}/): {d}\n" for s_, t, d in GUIDES)
+        + (f"- [The month in numbers]({cfg['site_url']}/insights/): construction tenders published and awarded last month\n" if insight else "")
+        + f"- [Privacy notice]({cfg['site_url']}/privacy/)\n- [Terms of service]({cfg['site_url']}/terms/)\n")
 
 
 def main() -> int:
