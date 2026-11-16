@@ -93,7 +93,7 @@ def test_listing_pages(tmp_path):
     assert "<h1>Roofing tenders in the South East</h1>" in both and "/tenders/roofing/scotland/" in both
     assert "Roofing tenders in Scotland" in (out / "tenders" / "roofing" / "scotland" / "index.html").read_text()
     site = (out / "sitemap.xml").read_text()
-    assert "/tenders/roofing/south-east/" in site and site.count("<url>") == 7 + 8
+    assert "/tenders/roofing/south-east/" in site and site.count("<url>") == 7 + 8 + 5
     home = (out / "index.html").read_text()
     assert '<a href="/tenders/south-east/">South East<span>59</span></a>' in home
 
@@ -198,3 +198,29 @@ def test_login_and_account_pages(tmp_path):
     assert "/account/</loc>" not in (tmp_path / "sitemap.xml").read_text()
     assert 'href="/login/"' in (tmp_path / "index.html").read_text()
     assert (tmp_path / "account.js").exists() and (tmp_path / "login.js").exists()
+
+
+def test_monthly_insight_page(tmp_path):
+    stats = dict(STATS, insight={
+        "month": "2026-10-01", "published": 412, "published_prev": 380, "with_value": 300, "under_500k": 210, "median_value": 185000,
+        "categories": [{"name": "roofing", "n": 60, "median": 120000}, {"name": "nonsense", "n": 3, "median": None}],
+        "regions": [{"name": "London", "n": 70}], "buyers": [{"name": "Kent County Council <b>", "n": 9}],
+        "awards": 150, "award_median": 240000, "award_firms": 120, "sources": {}})
+    build.build(stats, CFG, tmp_path / "dist")
+    page = (tmp_path / "dist" / "insights" / "index.html").read_text()
+    assert "UK construction tenders in October 2026: the month in numbers" in page
+    assert "412 construction and building maintenance tenders" in page and "up 8% on the month before" in page
+    assert "70% were under £500,000" in page and "&lt;b&gt;" in page and "nonsense" not in page
+    assert "/insights/" in (tmp_path / "dist" / "sitemap.xml").read_text()
+    build.build(dict(STATS, insight={"published": 10}), CFG, tmp_path / "d2")
+    assert not (tmp_path / "d2" / "insights").exists()
+
+
+def test_guides_are_built_and_listed(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    for slug in ("finding-public-sector-construction-tenders", "procurement-act-2023-construction",
+                 "frameworks-and-call-offs", "tender-alert-services-compared"):
+        page = (tmp_path / "dist" / "guides" / slug / "index.html").read_text()
+        assert "$" not in page.split("<main", 1)[1].split("</main>", 1)[0].replace("£", "")
+        assert f"/guides/{slug}/" in (tmp_path / "dist" / "sitemap.xml").read_text()
+    assert "/guides/" in (tmp_path / "dist" / "index.html").read_text()
