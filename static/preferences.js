@@ -19,7 +19,12 @@
   function limitText(n, all, noun) {
     return n >= all ? "(choose any, or none for all " + noun + ")" : "(choose up to " + n + ")";
   }
-  if (!token) { intro.textContent = "This link is incomplete. Open the link from one of our emails again."; return; }
+  if (!token) {
+    intro.textContent = "This link is incomplete. Open the link from one of our emails again, or ";
+    var a = document.createElement("a"); a.href = "/login/"; a.textContent = "sign in with your email address";
+    intro.appendChild(a); intro.appendChild(document.createTextNode(" and change your choices from your account page."));
+    return;
+  }
   fetch(form.dataset.api + "?token=" + encodeURIComponent(token)).then(function (res) {
     if (!res.ok) throw new Error("not found");
     return res.json();

@@ -173,4 +173,11 @@ fieldset p.fine{margin:4px 0 10px}
   table.rows td.num{font-size:14px}
   table.rows td[data-label]::before{content:attr(data-label) " ";color:var(--grey);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
   .stats{grid-template-columns:1fr 1fr}
+  table.stack thead{display:none}
+  table.stack,table.stack tbody,table.stack tr,table.stack td{display:block}
+  table.stack tr{padding:14px 16px;border-bottom:1px solid var(--line)}
+  table.stack td{padding:3px 0;border:0}
+  table.stack td[data-label]::before{content:attr(data-label);display:block;color:var(--grey);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  table.stack td:first-child::before{display:none}
+  table.stack td:first-child{font-weight:700;font-size:16px}
 }
