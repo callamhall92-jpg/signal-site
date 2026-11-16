@@ -77,7 +77,7 @@
     body.appendChild(el("p", null, t.buyer || "Buyer not stated"));
     var dist = distanceOf(t);
     body.appendChild(el("p", null, [t.council ? t.council + (t.where === "buyer" ? " (buyer's address)" : "") : t.region,
-      dist === null ? null : Math.round(dist) + " miles away", LABELS[t.category], money(t.value), "closes " + nice(t.deadline) + " (" + t.days + " day" + (t.days === 1 ? "" : "s") + ")"].filter(Boolean).join(" | ")));
+      dist === null ? null : Math.round(dist) + " miles away", workLabel(t), money(t.value), "closes " + nice(t.deadline) + " (" + t.days + " day" + (t.days === 1 ? "" : "s") + ")"].filter(Boolean).join(" | ")));
     if (t.note) line(body, "Our read", t.note, "read");
     intelLines(t.intel).forEach(function (l) { line(body, l[0], l[1]); });
     if (t.fitNote) line(body, "Check first", t.fitNote + ".", "check");
@@ -104,6 +104,10 @@
     return item;
   }
 
+  function workLabel(t) {
+    var main = LABELS[t.category], mine = (t.also || []).filter(function (a) { return a !== t.category && LABELS[a] && (state.data.trades || []).indexOf(a) !== -1; });
+    return main && mine.length ? main + ", includes " + LABELS[mine[0]].toLowerCase() : main;
+  }
   function area(t) { return t.county || t.council || null; }
   function miles(a, b) {
     var r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
@@ -144,7 +148,7 @@
       if (county && area(t) !== county) return false;
       if (council && t.council !== council) return false;
       if (within && state.base) { var m = distanceOf(t); if (m === null || m > within) return false; }
-      if (type && t.category !== type) return false;
+      if (type && t.category !== type && (t.also || []).indexOf(type) === -1) return false;
       if (days && t.days > days) return false;
       if (t.score < min) return false;
       if (only && !t.shortlisted) return false;
@@ -195,7 +199,8 @@
     $("plan").textContent = d.plan + " plan" + (d.updated ? " · checked " + nice(String(d.updated).slice(0, 10)) : "");
     $("prefs").href = "/preferences/?token=" + encodeURIComponent(token);
     function uniq(key) { var s = {}; d.tenders.forEach(function (t) { if (t[key]) s[t[key]] = 1; }); return Object.keys(s).sort(); }
-    fill($("f-region"), uniq("region")); fill($("f-type"), uniq("category"), LABELS);
+    fill($("f-region"), uniq("region")); var types = {}; d.tenders.forEach(function (t) { if (t.category) types[t.category] = 1; (t.also || []).forEach(function (a) { if (LABELS[a]) types[a] = 1; }); });
+    fill($("f-type"), Object.keys(types).sort(), LABELS);
     var areas = {}; d.tenders.forEach(function (t) { if (area(t)) areas[area(t)] = 1; }); fill($("f-county"), Object.keys(areas).sort());
     fill($("f-council"), uniq("council"));
     $("f-county").addEventListener("input", function () {
