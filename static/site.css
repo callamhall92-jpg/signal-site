@@ -180,4 +180,5 @@ fieldset p.fine{margin:4px 0 10px}
   table.stack td[data-label]::before{content:attr(data-label);display:block;color:var(--grey);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
   table.stack td:first-child::before{display:none}
   table.stack td:first-child{font-weight:700;font-size:16px}
+  table.stack td a{display:inline}
 }
