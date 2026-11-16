@@ -80,6 +80,8 @@
       dist === null ? null : Math.round(dist) + " miles away", workLabel(t), money(t.value), "closes " + nice(t.deadline) + " (" + t.days + " day" + (t.days === 1 ? "" : "s") + ")"].filter(Boolean).join(" | ")));
     if (t.note) line(body, "Our read", t.note, "read");
     intelLines(t.intel).forEach(function (l) { line(body, l[0], l[1]); });
+    var docs = docsLine(t);
+    if (docs) line(body, docs[0], docs[1]);
     if (t.fitNote) line(body, "Check first", t.fitNote + ".", "check");
     if (t.parts) body.appendChild(el("p", "why", PARTS.filter(function (p) { return t.parts[p[0]]; }).map(function (p) { return p[1] + " " + t.parts[p[0]][0] + "/" + t.parts[p[0]][1]; }).join(" · ")));
     var b = el("button", "linkish", t.shortlisted ? "On your shortlist. Remove" : "Remind me before this closes");
@@ -132,6 +134,18 @@
       seen[key] = 1;
       return true;
     });
+  }
+  function docsLine(t) {
+    if (t.doc_note) return ["From the tender documents", t.doc_note];
+    var f = t.doc_facts || {}, bits = [];
+    if (f.turnover) bits.push("minimum turnover " + f.turnover);
+    (f.mentions || []).forEach(function (m) { if (m !== "a minimum turnover" && m !== "a site visit") bits.push(m); });
+    if (f.contract) bits.push(f.contract + " contract");
+    if (f.social_value_pct) bits.push("social value " + f.social_value_pct + "% of the score");
+    if (f.site_visit_mandatory) bits.push("mandatory site visit");
+    if (bits.length) return ["From the tender documents", bits.slice(0, 7).join("; ") + "."];
+    if (t.docs_portal) return ["Tender documents", "On " + t.docs_portal + ", where you register as a supplier to download them."];
+    return null;
   }
   function area(t) { return t.county || t.council || null; }
   function miles(a, b) {
