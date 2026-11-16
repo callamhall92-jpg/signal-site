@@ -224,3 +224,10 @@ def test_guides_are_built_and_listed(tmp_path):
         assert "$" not in page.split("<main", 1)[1].split("</main>", 1)[0].replace("£", "")
         assert f"/guides/{slug}/" in (tmp_path / "dist" / "sitemap.xml").read_text()
     assert "/guides/" in (tmp_path / "dist" / "index.html").read_text()
+
+
+def test_signup_form_carries_weekly_rates(tmp_path):
+    cfg = dict(CFG, signup_open=True)
+    build.build(dict(STATS, rates=[{"region": "South East", "category": "roofing", "per_week": 0.5}]), cfg, tmp_path / "dist")
+    page = (tmp_path / "dist" / "index.html").read_text()
+    assert 'data-rates="{&quot;South East|roofing&quot;: 0.5}"' in page and 'id="s-rate"' in page

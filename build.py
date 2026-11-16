@@ -91,7 +91,7 @@ WORK_TYPES = ["repairs_maintenance", "refurbishment", "new_build", "mechanical_e
               "groundworks_civils", "design_professional"]
 
 
-def start_block(cfg: dict) -> str:
+def start_block(cfg: dict, rates: list | None = None) -> str:
     email = html.escape(cfg["contact_email"])
     if not cfg.get("signup_open"):
         return (
@@ -103,11 +103,13 @@ def start_block(cfg: dict) -> str:
             f'<a class="btn dark" style="text-align:center" href="mailto:{email}?subject=Noticehawk%20early%20access">Email {email}</a>'
             '<span class="fine">We never sell or share your details.</span></div>')
     regions = "".join(f"<option>{html.escape(r)}</option>" for r in REGIONS)
+    rates_attr = html.escape(json.dumps({r["region"] + "|" + r["category"]: float(r["per_week"]) for r in (rates or [])}), quote=True)
     work = "".join(f'<option value="{w}">{html.escape(CATEGORY_LABELS[w])}</option>' for w in WORK_TYPES)
     return (
         '<div><h2>Start with three tenders a week, free.</h2>'
         '<p>Pick your region and the work you do. Upgrade any time for the full scored list.</p></div>'
-        f'<form class="card" id="signup" action="{html.escape(cfg["signup_url"], quote=True)}" method="post" novalidate>'
+        f'<form class="card" id="signup" action="{html.escape(cfg["signup_url"], quote=True)}" method="post" novalidate '
+        f'data-rates="{rates_attr}">'
         '<label for="s-email">Work email</label>'
         '<input id="s-email" name="email" type="email" autocomplete="email" required>'
         '<label for="s-company">Company name or number <span class="fine">(optional)</span></label>'
@@ -116,6 +118,7 @@ def start_block(cfg: dict) -> str:
         f'<div><label for="s-region">Region</label><select id="s-region" name="region" required><option value="">Choose</option>{regions}</select></div>'
         f'<div><label for="s-work">Main type of work</label><select id="s-work" name="work" required><option value="">Choose</option>{work}</select></div>'
         '</div>'
+        '<p class="fine" id="s-rate" aria-live="polite"></p>'
         '<div class="trap" aria-hidden="true"><label for="s-website">Leave this empty</label>'
         '<input id="s-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>'
         '<label class="check"><input name="product_updates" type="checkbox" checked>'
@@ -466,7 +469,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         sample_rows=sample_rows(stats.get("sample") or []),
         region_chips=chips(stats.get("regions") or [], None, {p["region"]: p["path"] for p in pages if p["region"] and not p["category"]}),
         category_chips=chips(stats.get("categories") or [], CATEGORY_LABELS, {p["category"]: p["path"] for p in pages if p["category"] and not p["region"]}),
-        start_block=start_block(cfg),
+        start_block=start_block(cfg, stats.get("rates")),
         hero_note=("Three tenders a week for your region, free. No card needed." if cfg.get("signup_open")
                    else "Free accounts open shortly: three tenders a week for your region, no card needed."),
         faq_html="\n".join(f"<div><h3>{html.escape(q)}</h3><p>{html.escape(a)}</p></div>" for q, a in FAQ))
