@@ -5,6 +5,7 @@
   var msg = document.getElementById("signup-msg");
   var button = form.querySelector("button");
   var labels = { email: "a valid email address", region: "your region", work: "your main type of work" };
+  function firstFrom() { try { return JSON.parse(sessionStorage.getItem("nh_from") || "{}"); } catch (e) { return {}; } }
   function say(text, ok) { msg.textContent = text; msg.className = "msg " + (ok ? "good" : "bad"); }
   // How many new tenders a week to expect, from the last four weeks, so nobody signs up expecting more than comes.
   var rates = {};
@@ -35,7 +36,8 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: f.email.value, company: f.company.value, region: f.region.value, work: f.work.value,
-        partner_opt_in: f.partner_opt_in.checked, product_updates: f.product_updates.checked, website: f.website.value, page: location.pathname
+        partner_opt_in: f.partner_opt_in.checked, product_updates: f.product_updates.checked, website: f.website.value, page: location.pathname,
+        referrer: firstFrom().ref, utm: firstFrom().utm
       })
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (body) { return { status: res.status, body: body }; });
