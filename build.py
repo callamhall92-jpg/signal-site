@@ -384,7 +384,15 @@ GUIDES = [
      "How public-sector frameworks and call-off contracts work under the Procurement Act 2023, how long they last, and what they mean for smaller construction firms."),
     ("tender-alert-services-compared", "UK tender alert services compared",
      "Free official tender sites and paid UK tender alert services side by side: free options, published prices and what each focuses on."),
+    ("winning-public-sector-work-small-construction-firms", "How small construction firms win public-sector work",
+     "How smaller UK construction and maintenance firms win public-sector contracts: choosing tenders, registering, bid decisions, scoring and feedback under the Procurement Act 2023."),
+    ("tender-paperwork-checklist", "The paperwork buyers ask for: a checklist for construction tenders",
+     "The insurance, health and safety, financial and policy documents UK public buyers usually ask construction firms for, and when each is needed."),
+    ("writing-a-tender-response-that-scores-well", "Writing a tender response that scores well",
+     "How public-sector construction tenders are marked, and how to answer quality, price and social value questions so your bid scores well."),
 ]
+GUIDE_DATES = {"winning-public-sector-work-small-construction-firms": "2026-11-17", "tender-paperwork-checklist": "2026-11-17",
+               "writing-a-tender-response-that-scores-well": "2026-11-17"}
 GUIDE_CTA = ('<div class="cta-box"><div><strong>Get the tenders for your region and type of work every Monday.</strong>'
              '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
              '<a class="btn" href="/#start">Start free</a></div>')
@@ -396,7 +404,7 @@ def write_guides(base: str, cfg: dict, out: Path, insight: bool) -> list[str]:
     for slug_, title, desc in GUIDES:
         body = Template((ROOT / "templates" / "guides" / f"{slug_}.html").read_text()).substitute(header=HEADER, cta=GUIDE_CTA)
         ld = {"@context": "https://schema.org", "@type": "Article", "headline": title, "description": desc,
-              "dateModified": "2026-11-16", "author": {"@type": "Organization", "name": "Noticehawk"},
+              "dateModified": GUIDE_DATES.get(slug_, "2026-11-16"), "author": {"@type": "Organization", "name": "Noticehawk"},
               "publisher": {"@type": "Organization", "name": "Noticehawk"}}
         head = '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + "</script>"
         (out / "guides" / slug_).mkdir()
