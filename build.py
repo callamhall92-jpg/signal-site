@@ -133,7 +133,7 @@ def start_block(cfg: dict, rates: list | None = None) -> str:
         '<div class="trap" aria-hidden="true"><label for="s-website">Leave this empty</label>'
         '<input id="s-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>'
         '<label class="check"><input name="product_updates" type="checkbox" checked>'
-        '<span>Tell me now and then about Noticehawk\'s paid plans. Untick if you would rather not.</span></label>'
+        '<span>Send me a helpful guide every couple of weeks, and the odd note about paid plans. Untick if you would rather not.</span></label>'
         '<label class="check"><input name="partner_opt_in" type="checkbox">'
         '<span>Send me offers from selected partners, such as bid writers and insurers. Optional.</span></label>'
         '<button class="btn dark" type="submit">Start free</button>'
@@ -151,7 +151,7 @@ def category_slug(category: str) -> str:
 
 
 HEADER = ('<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
-          '<nav class="main" aria-label="Main"><a href="/this-week/">This week</a><a href="/tenders/">Browse tenders</a><a href="/how-it-works/">How it works</a><a href="/#pricing">Pricing</a><a href="/login/">Sign in</a>'
+          '<nav class="main" aria-label="Main"><a href="/this-week/">This week</a><a href="/tenders/">Browse tenders</a><a href="/guides/">Guides</a><a href="/how-it-works/">How it works</a><a href="/#pricing">Pricing</a><a href="/login/">Sign in</a>'
           '<a class="btn small" href="/#start">Start free</a></nav></div></header></div>')
 
 
@@ -398,6 +398,21 @@ GUIDE_CTA = ('<div class="cta-box"><div><strong>Get the tenders for your region 
              '<a class="btn" href="/#start">Start free</a></div>')
 
 
+HOME_GUIDES = [
+    ("winning-public-sector-work-small-construction-firms", "How small construction firms win public-sector work",
+     "Choosing tenders you can win, what to have ready, and how to use buyers' feedback."),
+    ("tender-paperwork-checklist", "The paperwork buyers ask for",
+     "The insurance, health and safety and financial documents to have ready before a tender lands."),
+    ("writing-a-tender-response-that-scores-well", "Writing a tender response that scores well",
+     "How tenders are marked, and how to answer quality, price and social value questions."),
+]
+
+
+def guide_cards() -> str:
+    return "\n".join(f'<a class="guide-card" href="/guides/{s_}/"><h3>{html.escape(t)}</h3><p>{html.escape(d)}</p>'
+                     '<span>Read the guide</span></a>' for s_, t, d in HOME_GUIDES)
+
+
 def write_guides(base: str, cfg: dict, out: Path, insight: bool) -> list[str]:
     paths = []
     (out / "guides").mkdir()
@@ -499,6 +514,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         category_chips=chips(stats.get("categories") or [], CATEGORY_LABELS, {p["category"]: p["path"] for p in pages if p["category"] and not p["region"]}),
         start_block=start_block(cfg, stats.get("rates")),
         **pay_links(cfg),
+        guide_cards=guide_cards(),
         hero_note=("Three tenders a week for your region, free. No card needed." if cfg.get("signup_open")
                    else "Free accounts open shortly: three tenders a week for your region, no card needed."),
         faq_html="\n".join(f"<div><h3>{html.escape(q)}</h3><p>{html.escape(a)}</p></div>" for q, a in FAQ))
@@ -684,17 +700,18 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         base, cfg, "/unsubscribe/", "Unsubscribe | Noticehawk", "Stop Noticehawk emails.",
         '<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
         '</div></header></div><main id="main" class="doc"><h1>Unsubscribe</h1>'
-        '<div id="ask"><p>Stop all Noticehawk emails to this address. A paid plan is not cancelled by this; '
+        '<div id="ask"><p id="what">Stop all Noticehawk emails to this address. A paid plan is not cancelled by this; '
         'use the billing link in any alert to do that.</p>'
         '<p><button class="btn dark" id="go" type="button">Unsubscribe me</button></p></div>'
         '<p class="msg" id="out" role="status" aria-live="polite"></p>'
         f'<p>Trouble with this page? Email <a href="mailto:{html.escape(cfg["contact_email"])}">{html.escape(cfg["contact_email"])}</a> and we will do it for you.</p></main>'
-        f'<script>(function(){{var q=new URLSearchParams(location.search),t=q.get("token"),w=q.get("who")==="p"?"&who=p":"",o=document.getElementById("out"),a=document.getElementById("ask");'
+        f'<script>(function(){{var q=new URLSearchParams(location.search),t=q.get("token"),g=q.get("who")==="g",w=q.get("who")==="p"?"&who=p":g?"&who=g":"",o=document.getElementById("out"),a=document.getElementById("ask");'
+        'if(g){document.getElementById("what").textContent="Stop the guide emails to this address. Your tender alerts carry on as they are.";document.getElementById("go").textContent="Stop the guides"}'
         'function say(m,ok){o.textContent=m;o.className="msg "+(ok?"good":"bad")}'
         'if(!t){a.hidden=true;say("This link is incomplete. Open the unsubscribe link from one of our emails again.",false);return}'
         'document.getElementById("go").addEventListener("click",function(){this.disabled=true;'
         f'fetch({json.dumps(cfg["unsubscribe_url"])}+"?token="+encodeURIComponent(t)+w,{{method:"POST"}})'
-        '.then(function(r){if(r.ok){a.hidden=true;say("Done. You will not get any more emails from us.",true)}'
+        '.then(function(r){if(r.ok){a.hidden=true;say(g?"Done. No more guide emails. Your tender alerts carry on.":"Done. You will not get any more emails from us.",true)}'
         'else{say("That did not work. Please try again, or email us.",false)}})'
         '.catch(function(){say("That did not work. Check your connection and try again.",false)})})})();</script>',
         '<meta name="robots" content="noindex">'))
