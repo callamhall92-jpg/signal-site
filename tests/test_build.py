@@ -200,22 +200,6 @@ def test_login_and_account_pages(tmp_path):
     assert (tmp_path / "account.js").exists() and (tmp_path / "login.js").exists()
 
 
-def test_monthly_insight_page(tmp_path):
-    stats = dict(STATS, insight={
-        "month": "2026-10-01", "published": 412, "published_prev": 380, "with_value": 300, "under_500k": 210, "median_value": 185000,
-        "categories": [{"name": "roofing", "n": 60, "median": 120000}, {"name": "nonsense", "n": 3, "median": None}],
-        "regions": [{"name": "London", "n": 70}], "buyers": [{"name": "Kent County Council <b>", "n": 9}],
-        "awards": 150, "award_median": 240000, "award_firms": 120, "sources": {}})
-    build.build(stats, CFG, tmp_path / "dist")
-    page = (tmp_path / "dist" / "insights" / "index.html").read_text()
-    assert "UK construction tenders in October 2026: the month in numbers" in page
-    assert "412 construction and building maintenance tenders" in page and "up 8% on the month before" in page
-    assert "70% were under £500,000" in page and "&lt;b&gt;" in page and "nonsense" not in page
-    assert "/insights/" in (tmp_path / "dist" / "sitemap.xml").read_text()
-    build.build(dict(STATS, insight={"published": 10}), CFG, tmp_path / "d2")
-    assert not (tmp_path / "d2" / "insights").exists()
-
-
 def test_guides_are_built_and_listed(tmp_path):
     build.build(STATS, CFG, tmp_path / "dist")
     for slug in ("finding-public-sector-construction-tenders", "procurement-act-2023-construction",
@@ -249,3 +233,53 @@ def test_plan_buttons_go_to_stripe_only_when_open(tmp_path):
         assert f'href="{url}"' in home
     build.build(STATS, dict(CFG, signup_open=False, payment_links=links), tmp_path / "shut")
     assert "buy.stripe.com" not in (tmp_path / "shut" / "index.html").read_text()
+
+
+def _content_stats():
+    rows = [dict(r) for r in STATS["listings"]]
+    region = rows[0]["region"]
+    mine = [r for r in rows if r["region"] == region]
+    extra = [{**mine[0], "title": f"Extra works package {i}", "url": f"https://www.find-tender.service.gov.uk/Notice/00{i}-2026",
+              "buyer": "KENT COUNTY COUNCIL"} for i in range(3)]
+    month = {"month": "2026-10-01", "region": None, "awards": 1122, "prev": 1229, "firms": 1347, "median": 256000,
+             "with_value": 975, "under_500k": 575,
+             "categories": [{"name": "roofing", "n": 85, "median": 313435.9}, {"name": "refurbishment", "n": 192, "median": 241312.5}],
+             "regions": [{"name": region, "n": 109}, {"name": "Wales", "n": 102}],
+             "buyers": [{"name": "KENT COUNTY COUNCIL", "n": 35}], "winners": [{"name": "ABCA SYSTEMS LIMITED", "n": 19}],
+             "largest": [{"title": "CA123 - Highways resurfacing", "buyer": "Sefton Council", "value": 8000000,
+                          "url": "https://www.find-tender.service.gov.uk/Notice/096120-2026", "category": "groundworks_civils"}]}
+    return {**STATS, "listings": rows + extra, "new_week": [r["url"] for r in extra],
+            "market": [month, {**month, "month": "2026-09-01", "awards": 150}],     # September is too thin to publish
+            "market_regions": [{**month, "region": region, "awards": 109, "regions": []}],
+            "buyers": [{"name": "KENT COUNTY COUNCIL", "region": region, "awards": 40, "median": 55677, "ending_12m": 3,
+                        "categories": [{"name": "roofing", "n": 30}], "winners": [{"name": "ROCON CONTRACTORS LIMITED", "n": 9}],
+                        "recent": [{"title": "School roof", "date": "2026-11-12", "value": 96883.5, "category": "roofing",
+                                    "url": "https://www.contractsfinder.service.gov.uk/Notice/abc"}]}]}, region
+
+
+def test_market_reports_buyers_and_weekly_round_ups(tmp_path):
+    stats, region = _content_stats()
+    out = tmp_path / "dist"
+    build.build(stats, CFG, out)
+    rslug = build.slug(region)
+    report = (out / "insights" / "2026-10" / "index.html").read_text()
+    assert "UK construction contracts awarded: October 2026" in report and "1,122 construction" in report
+    assert 'href="/buyers/kent-county-council/">Kent County Council</a>' in report and "Abca Systems Limited" in report
+    assert "CA123" not in report and "Highways resurfacing" in report
+    assert not (out / "insights" / "2026-09").exists()
+    assert (out / "insights" / "2026-10" / rslug / "index.html").exists()
+    assert "October 2026" in (out / "insights" / "index.html").read_text()
+    buyer = (out / "buyers" / "kent-county-council" / "index.html").read_text()
+    assert "Rocon Contractors Limited" in buyer and "Extra works package 0" in buyer and "3 of these contracts are due to end" in buyer
+    week = (out / "this-week" / rslug / "index.html").read_text()
+    assert "3 public-sector construction" in week and "Extra works package 2" in week
+    assert f"/this-week/{rslug}/" in (out / "this-week" / "index.html").read_text()
+    site = (out / "sitemap.xml").read_text()
+    for path in ("/insights/2026-10/", f"/insights/2026-10/{rslug}/", "/buyers/kent-county-council/", f"/this-week/{rslug}/"):
+        assert path in site
+    assert "/buyers/" in (out / "llms.txt").read_text()
+
+
+def test_no_content_pages_without_data(tmp_path):
+    build.build(STATS, CFG, tmp_path / "dist")
+    assert not (tmp_path / "dist" / "buyers").exists() and not (tmp_path / "dist" / "insights").exists()

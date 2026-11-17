@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+from types import SimpleNamespace
 import json
 import re
 import shutil
@@ -11,6 +12,8 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from string import Template
+
+import content
 
 ROOT = Path(__file__).parent
 CATEGORY_LABELS = {
@@ -319,63 +322,6 @@ def weekly_digest(stats: dict, updated_text: str, cfg: dict) -> tuple[str, str]:
     return body, head
 
 
-def monthly_insight(stats: dict) -> tuple[str, str, str] | None:
-    """The month in numbers: what was published and awarded last month. None if there is too little to say."""
-    i = stats.get("insight") or {}
-    if int(i.get("published") or 0) < 50:
-        return None
-    month = datetime.strptime(i["month"], "%Y-%m-%d").strftime("%B %Y")
-    n, prev = int(i["published"]), int(i.get("published_prev") or 0)
-    change = (f"{'up' if n > prev else 'down'} {abs(round((n - prev) / prev * 100))}% on the month before" if prev and n != prev
-              else "the same as the month before" if prev else "")
-    with_value, under = int(i.get("with_value") or 0), int(i.get("under_500k") or 0)
-    share = round(under / with_value * 100) if with_value else None
-    cats = [c for c in i.get("categories") or [] if c.get("name") in CATEGORY_LABELS]
-    regions = i.get("regions") or []
-    buyers = i.get("buyers") or []
-    cat_rows = "".join(f'<tr><td>{html.escape(CATEGORY_LABELS[c["name"]])}</td><td class="num">{int(c["n"])}</td>'
-                       f'<td class="num">{money(c.get("median"))}</td></tr>' for c in cats)
-    reg_rows = "".join(f'<tr><td>{html.escape(r["name"])}</td><td class="num">{int(r["n"])}</td></tr>' for r in regions)
-    buyer_rows = "".join(f'<tr><td>{html.escape(b["name"])}</td><td class="num">{int(b["n"])}</td></tr>' for b in buyers)
-    top_cat = CATEGORY_LABELS[cats[0]["name"]].lower() if cats else None
-    top_reg = regions[0]["name"] if regions else None
-    facts = [f"{n:,} construction and building maintenance tenders were published by UK public bodies in {month}"
-             + (f", {change}." if change else ".")]
-    if top_cat:
-        facts.append(f"The most common type of work was {top_cat}, with {int(cats[0]['n'])} tenders.")
-    if top_reg:
-        facts.append(f"{top_reg} had the most tenders ({int(regions[0]['n'])}).")
-    if share is not None:
-        facts.append(f"Of the tenders that gave a value, {share}% were under £500,000, the range where smaller firms usually compete best.")
-    if i.get("median_value"):
-        facts.append(f"The typical (median) stated value was {money(i['median_value'])}.")
-    if int(i.get("awards") or 0):
-        facts.append(f"{int(i['awards'])} contracts were reported as awarded, going to {int(i.get('award_firms') or 0)} different firms"
-                     + (f", with a median award of {money(i['award_median'])}." if i.get("award_median") else "."))
-    desc = facts[0]
-    ld = {"@context": "https://schema.org", "@type": "Article", "headline": f"UK construction tenders in {month}: the month in numbers",
-          "datePublished": stats.get("generated_at", "")[:10], "author": {"@type": "Organization", "name": "Noticehawk"},
-          "publisher": {"@type": "Organization", "name": "Noticehawk"}, "description": desc}
-    head = '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"
-    body = (HEADER + f'<main id="main" class="doc wide"><h1>UK construction tenders in {month}: the month in numbers</h1>'
-            '<p class="lede dark">' + html.escape(" ".join(facts[:2])) + '</p>'
-            '<h2>Key figures</h2><ul>' + "".join(f"<li>{html.escape(f)}</li>" for f in facts) + '</ul>'
-            '<h2>By type of work</h2><div class="tablebox light"><table><thead><tr><th scope="col">Type of work</th>'
-            f'<th scope="col">Tenders</th><th scope="col">Median value</th></tr></thead><tbody>{cat_rows}</tbody></table></div>'
-            '<h2>By region</h2><div class="tablebox light"><table><thead><tr><th scope="col">Region</th>'
-            f'<th scope="col">Tenders</th></tr></thead><tbody>{reg_rows}</tbody></table></div>'
-            + ('<h2>Busiest buyers</h2><div class="tablebox light"><table><thead><tr><th scope="col">Buyer</th>'
-               f'<th scope="col">Tenders</th></tr></thead><tbody>{buyer_rows}</tbody></table></div>' if buyer_rows else '')
-            + '<h2>How these figures are made</h2><p>We count tender notices published on Find a Tender, Contracts Finder and Public Contracts Scotland '
-            'that we classify as construction or building maintenance work, with the same tender published on two services counted once. '
-            'Values are the figures buyers state in their notices, which are often estimates. Regions are where the work is, where the notice says, '
-            'otherwise where the buyer is. Contains public sector information licensed under the Open Government Licence v3.0.</p>'
-            '<div class="cta-box"><div><strong>Get the tenders for your region and type of work every Monday.</strong>'
-            '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
-            '<a class="btn" href="/#start">Start free</a></div></main>')
-    return body, head, desc
-
-
 GUIDES = [
     ("finding-public-sector-construction-tenders", "How to find UK public-sector construction tenders",
      "Where UK public bodies publish construction tenders: Find a Tender, Contracts Finder, Public Contracts Scotland, Sell2Wales and eTendersNI, with the thresholds that decide which."),
@@ -428,8 +374,10 @@ def write_guides(base: str, cfg: dict, out: Path, insight: bool) -> list[str]:
         paths.append(f"/guides/{slug_}/")
     items = "".join(f'<li><a href="/guides/{s_}/">{html.escape(t)}</a><br><span class="muted">{html.escape(d)}</span></li>' for s_, t, d in GUIDES)
     if insight:
-        items = ('<li><a href="/insights/">UK construction tenders: the month in numbers</a><br>'
-                 '<span class="muted">What was published and awarded last month, by type of work and region.</span></li>') + items
+        items = ('<li><a href="/insights/">Monthly market reports</a><br>'
+                 '<span class="muted">Construction contracts awarded by public bodies each month: values, types of work, buyers and winners.</span></li>'
+                 '<li><a href="/buyers/">Public buyers</a><br>'
+                 '<span class="muted">What each busy public buyer awards, the firms that win most often, and what is open now.</span></li>') + items
     body = (HEADER + '<main id="main" class="doc"><h1>Guides for construction firms bidding for public work</h1>'
             f'<ul class="guides">{items}</ul>{GUIDE_CTA}</main>')
     (out / "guides" / "index.html").write_text(page(base, cfg, "/guides/", "Guides to public-sector construction tenders | Noticehawk",
@@ -557,17 +505,22 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         base, cfg, "/example-alert/", "Example tender alert email | Noticehawk",
         "See the weekly email a Noticehawk subscriber receives: scored construction tenders with the points behind each score and what to check first.",
         example_alert(stats, updated_text)))
+    helpers = SimpleNamespace(HEADER=HEADER, CATEGORY_LABELS=CATEGORY_LABELS, NOTICE_PREFIXES=NOTICE_PREFIXES, money=money,
+                              slug=slug, tidy_title=tidy_title, page=page)
+    made = content.write(helpers, base, cfg, out, stats, pages, updated_text)
+    insight = made["insights"]
     digest_body, digest_head = weekly_digest(stats, updated_text, cfg)
-    (out / "this-week").mkdir()
+    if made["weekly"]:
+        digest_body = digest_body.replace(
+            '<p><a href="/tenders/">Browse all open tenders by region and type of work</a></p>',
+            '<h2 class="sub">New this week by region</h2><ul class="chips links">'
+            + "".join(f'<li><a href="{p}">{html.escape(t)}</a></li>' for t, p in made["weekly"])
+            + '</ul><p><a href="/tenders/">Browse all open tenders by region and type of work</a></p>')
+    (out / "this-week").mkdir(exist_ok=True)
     (out / "this-week" / "index.html").write_text(page(
         base, cfg, "/this-week/", "Construction tenders worth a look this week | Noticehawk",
         f"The highest-scoring UK public-sector construction and building maintenance tenders published in the last week, updated {updated_text}.",
         digest_body, digest_head))
-    insight = monthly_insight(stats)
-    if insight:
-        (out / "insights").mkdir()
-        (out / "insights" / "index.html").write_text(page(
-            base, cfg, "/insights/", "UK construction tenders: the month in numbers | Noticehawk", insight[2], insight[0], insight[1]))
     guide_paths = write_guides(base, cfg, out, bool(insight))
     simple = ('<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
               '</div></header></div><main id="main" class="doc"><h1>{h}</h1><p>{p}</p><p><a class="btn dark" href="/">Back to the homepage</a></p></main>')
@@ -738,7 +691,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     today = updated.strftime("%Y-%m-%d")
     urls = "".join(f"<url><loc>{cfg['site_url']}{p}</loc><lastmod>{today}</lastmod></url>"
                    for p in ["/", "/this-week/", "/tenders/"] + [p["path"] for p in pages]
-                   + ["/how-it-works/", "/example-alert/", "/privacy/", "/terms/"] + (["/insights/"] if insight else []) + guide_paths)
+                   + ["/how-it-works/", "/example-alert/", "/privacy/", "/terms/"] + made["paths"] + guide_paths)
     (out / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n')
     (out / "robots.txt").write_text(
         "User-agent: *\nAllow: /\n\n"
@@ -763,7 +716,9 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         f"- [How it works]({cfg['site_url']}/how-it-works/): data sources, daily checks, handling of changed and withdrawn notices, the scoring table, limits\n"
         f"- [Example alert]({cfg['site_url']}/example-alert/): the weekly subscriber email with live tenders\n"
         + "".join(f"- [{t}]({cfg['site_url']}/guides/{s_}/): {d}\n" for s_, t, d in GUIDES)
-        + (f"- [The month in numbers]({cfg['site_url']}/insights/): construction tenders published and awarded last month\n" if insight else "")
+        + (f"- [Monthly market reports]({cfg['site_url']}/insights/): construction contracts awarded by UK public bodies each month, nationally and by region: counts, typical values, types of work, busiest buyers and most frequent winners\n" if insight else "")
+        + (f"- [Public buyers]({cfg['site_url']}/buyers/): {made['buyers']} pages, one per public body, with what it awards, who wins and open tenders\n" if made["buyers"] else "")
+        + "".join(f"- [New tenders in {t} this week]({cfg['site_url']}{p})\n" for t, p in made["weekly"])
         + f"- [Privacy notice]({cfg['site_url']}/privacy/)\n- [Terms of service]({cfg['site_url']}/terms/)\n")
 
 
