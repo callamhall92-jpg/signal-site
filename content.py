@@ -25,8 +25,7 @@ METHOD = ('<h2>How these figures are made</h2><p>We count contract award notices
           'Contains public sector information licensed under the Open Government Licence v3.0.</p>')
 _SMALL = {"and", "of", "the", "for", "in", "on", "at", "to", "de", "y"}
 _UPPER = {"nhs", "uk", "llp", "plc", "gb", "hm", "bbc", "nhsbt", "ii", "iii"}
-_THE = {"North East", "North West", "East Midlands", "West Midlands", "East of England", "South East", "South West",
-        "Yorkshire and the Humber"}
+_THE = {"North East", "North West", "East Midlands", "West Midlands", "East of England", "South East", "South West"}
 
 
 def friendly(name: str | None) -> str:
