@@ -93,7 +93,9 @@ def test_listing_pages(tmp_path):
     assert "<h1>Roofing tenders in the South East</h1>" in both and "/tenders/roofing/scotland/" in both
     assert "Roofing tenders in Scotland" in (out / "tenders" / "roofing" / "scotland" / "index.html").read_text()
     site = (out / "sitemap.xml").read_text()
-    assert "/tenders/roofing/south-east/" in site and site.count("<url>") == 7 + 8 + 5 + 3  # +3 guides added 17 Nov 2026
+    assert "/tenders/roofing/south-east/" in site and site.count("<url>") == 7 + 8 + 5 + 3 + 2  # +3 guides, +2 work board pages
+    assert 'id="work-form"' in (out / "post-work" / "index.html").read_text() and "/subcontract-work/" in site
+    assert 'noindex' in (out / "post-work" / "manage" / "index.html").read_text()
     home = (out / "index.html").read_text()
     assert '<a href="/tenders/south-east/">South East<span>59</span></a>' in home
 

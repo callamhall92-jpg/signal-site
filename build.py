@@ -608,6 +608,64 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p class="lede dark">For customers on a paid plan. Enter the email address you subscribed with and we will send you a sign-in link. There is no password to remember.</p>'
         + login_form + '<p class="fine">On the free plan? Your alerts arrive by email every Monday; there is nothing to sign in to.</p>'
         '</main><script src="/login.js" defer></script>', '<meta name="robots" content="noindex">'))
+    # Subcontract work board: contractors post work free; published after email confirmation and approval.
+    work_api = html.escape(cfg["work_url"], quote=True)
+    regions_opts = "".join(f'<option>{html.escape(r)}</option>' for r in REGIONS)
+    work_opts = "".join(f'<option value="{w}">{html.escape(CATEGORY_LABELS[w])}</option>' for w in WORK_TYPES)
+    (out / "subcontract-work").mkdir()
+    (out / "subcontract-work" / "index.html").write_text(page(
+        base, cfg, "/subcontract-work/", "Subcontract work for construction firms | Noticehawk",
+        "Work packages posted by main contractors and builders who want prices from construction and maintenance firms. Free to read and free to post.",
+        HEADER + f'<main id="main" class="doc wide" data-api="{work_api}"><h1>Subcontract work</h1>'
+        '<p class="lede dark">Work packages posted by contractors who want prices. Reply to the contractor directly; we take no fee and no commission.</p>'
+        '<p><a class="btn" href="/post-work/">Post work free</a></p>'
+        '<div id="work-list" class="mail" aria-live="polite"><p>Loading the board.</p></div>'
+        '<h2>How it works</h2><ul>'
+        '<li>A contractor posts the work, where it is, and the date they want prices by.</li>'
+        '<li>We check each post before it appears. Only construction and building maintenance work is published.</li>'
+        '<li>You contact the contractor using the details in the post. Noticehawk is not a party to any agreement between you.</li>'
+        '<li>Posts come down on their closing date, or sooner if the contractor removes them.</li></ul>'
+        '<p class="fine">Posts are written by the contractors named. We check that each one is genuine construction work, but we do not vet the contractor or the terms. Make your own checks before you price or start work.</p>'
+        '</main><script src="/work.js" defer></script>'))
+    (out / "post-work").mkdir()
+    (out / "post-work" / "index.html").write_text(page(
+        base, cfg, "/post-work/", "Post subcontract work free | Noticehawk",
+        "Contractors: post a work package free and get prices from construction and maintenance firms in your region.",
+        HEADER + '<main id="main" class="doc"><h1>Post work free</h1>'
+        '<p class="lede dark">For main contractors and builders who want prices for a package of work. It costs nothing, and firms reply to you directly.</p>'
+        f'<form id="work-form" class="doc-form work-form" data-api="{work_api}" novalidate>'
+        '<label for="w-company">Your company name</label><input id="w-company" name="company" type="text" autocomplete="organization" maxlength="120" required>'
+        '<label for="w-number">Company number <span class="opt">(optional)</span></label><input id="w-number" name="company_number" type="text" maxlength="8" inputmode="text">'
+        '<label for="w-email">Your email address</label><input id="w-email" name="email" type="email" autocomplete="email" required>'
+        '<p class="hint">We send a confirmation link here. It is not shown on the post.</p>'
+        '<label for="w-title">What is the work?</label><input id="w-title" name="title" type="text" maxlength="120" placeholder="Roofing package, school extension" required>'
+        f'<label for="w-category">Type of work</label><select id="w-category" name="category" required><option value="">Choose</option>{work_opts}</select>'
+        f'<label for="w-region">Region</label><select id="w-region" name="region" required><option value="">Choose</option>{regions_opts}</select>'
+        '<label for="w-town">Town or area <span class="opt">(optional)</span></label><input id="w-town" name="town" type="text" maxlength="60">'
+        '<label for="w-desc">Describe the work</label><textarea id="w-desc" name="description" rows="6" maxlength="2000" required></textarea>'
+        '<p class="hint">What needs doing, roughly how much, and when it starts. At least a couple of sentences. No web links.</p>'
+        '<label for="w-band">Rough value <span class="opt">(optional)</span></label><select id="w-band" name="value_band"><option value="">Not stated</option>'
+        '<option value="under_10k">Under £10,000</option><option value="10k_50k">£10,000 to £50,000</option><option value="50k_250k">£50,000 to £250,000</option>'
+        '<option value="250k_1m">£250,000 to £1 million</option><option value="over_1m">Over £1 million</option></select>'
+        '<label for="w-by">Prices wanted by</label><input id="w-by" name="apply_by" type="date" required>'
+        '<label for="w-apply">How should firms reply?</label><input id="w-apply" name="how_to_apply" type="text" maxlength="254" placeholder="estimating@yourfirm.co.uk" required>'
+        '<p class="hint">An email address, or a link starting https://. This is shown on the post.</p>'
+        '<input name="website" type="text" tabindex="-1" autocomplete="off" hidden>'
+        '<label class="check"><input id="w-agree" name="agree" type="checkbox" required> I am posting on behalf of this company, the work is real, and I agree to the post and the reply details being published. <a href="/terms/">Terms</a> and <a href="/privacy/">privacy</a>.</label>'
+        '<button class="btn" type="submit">Post this work</button></form>'
+        '<p id="work-msg" role="status"></p>'
+        '<p class="fine">We check every post before it appears, normally within one working day. You can take it down at any time from the link we email you.</p>'
+        '</main><script src="/work.js" defer></script>'))
+    (out / "post-work" / "done").mkdir()
+    (out / "post-work" / "done" / "index.html").write_text(page(
+        base, cfg, "/post-work/done/", "Post confirmed | Noticehawk", "Your post has been received.",
+        HEADER + '<main id="main" class="doc"><h1 id="done-h">Thank you</h1><p id="done-p" class="lede dark">Your email address is confirmed. We will check the post and email you when it is on the board, normally within one working day.</p>'
+        '<p><a href="/subcontract-work/">See the board</a></p></main><script src="/work.js" defer></script>', '<meta name="robots" content="noindex">'))
+    (out / "post-work" / "manage").mkdir()
+    (out / "post-work" / "manage" / "index.html").write_text(page(
+        base, cfg, "/post-work/manage/", "Manage a post | Noticehawk", "Review or remove a post.",
+        HEADER + f'<main id="main" class="doc" data-api="{work_api}"><h1 id="manage-h">Your post</h1><div id="manage" aria-live="polite"><p>Loading.</p></div>'
+        '</main><script src="/work.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "account").mkdir()
     (out / "account" / "index.html").write_text(page(
         base, cfg, "/account/", "Your account | Noticehawk", "Your live tender matches.",
@@ -691,7 +749,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     today = updated.strftime("%Y-%m-%d")
     urls = "".join(f"<url><loc>{cfg['site_url']}{p}</loc><lastmod>{today}</lastmod></url>"
                    for p in ["/", "/this-week/", "/tenders/"] + [p["path"] for p in pages]
-                   + ["/how-it-works/", "/example-alert/", "/privacy/", "/terms/"] + made["paths"] + guide_paths)
+                   + ["/how-it-works/", "/example-alert/", "/subcontract-work/", "/post-work/", "/privacy/", "/terms/"] + made["paths"] + guide_paths)
     (out / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n')
     (out / "robots.txt").write_text(
         "User-agent: *\nAllow: /\n\n"

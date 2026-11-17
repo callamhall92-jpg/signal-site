@@ -204,3 +204,10 @@ fieldset p.fine{margin:4px 0 10px}
 .assist-ticks .flag{font-weight:600}
 .assist-copy{width:100%;font:13px/1.4 monospace;margin-top:10px}
 .assist-open{font-weight:700}
+
+.work-form{max-width:560px}.work-form label{font-weight:600;margin-top:6px}.work-form .opt{font-weight:400;color:var(--grey)}
+.work-form input[type=text],.work-form input[type=date],.work-form select,.work-form textarea{font:inherit;padding:12px;border:1px solid var(--line);border-radius:4px;min-height:44px;background:#fff;color:var(--ink);width:100%}
+.work-form .hint{font-size:13px;color:var(--grey);margin:-4px 0 4px}
+.work-form .check{display:flex;gap:10px;align-items:flex-start;font-weight:400;font-size:14px;margin:10px 0}
+.work-form .check input{width:20px;height:20px;flex:none;margin-top:1px}
+.work-item{display:block}.work-item strong{font-size:17px}

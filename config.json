@@ -15,5 +15,6 @@
     "construction_basic": "https://buy.stripe.com/9B65kDdU26kb5k3djb8N200",
     "construction_pro": "https://buy.stripe.com/14A28rbLUbEv27R1At8N202",
     "construction_premium": "https://buy.stripe.com/aFabJ1g2adMDfYH92V8N201"
-  }
+  },
+  "work_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/post-work"
 }
