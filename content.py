@@ -43,9 +43,16 @@ def friendly(name: str | None) -> str:
         elif i > 0 and low in _SMALL:
             words.append(low)
         else:
-            words.append("-".join("'".join(x[:1].upper() + x[1:] if (j == 0 or len(x) > 1) else x
-                                           for j, x in enumerate(part.split("'"))) for part in low.split("-")))
+            lead = low[:len(low) - len(low.lstrip("([\""))]
+            rest = low[len(lead):]
+            words.append(lead + "-".join("'".join(x[:1].upper() + x[1:] if (j == 0 or len(x) > 1) else x
+                                                  for j, x in enumerate(part.split("'"))) for part in rest.split("-")))
     return " ".join(words)
+
+
+def buyer_key(name: str) -> str:
+    """Same rule as the database: "X Ltd" and "X Limited" are one buyer."""
+    return re.sub(r"\s+", " ", re.sub(r"[\s,.]*\b(limited|ltd)\b\.?\s*$", "", (name or "").strip().lower()))
 
 
 def in_region(region: str) -> str:
@@ -85,9 +92,9 @@ def table(head: list[str], rows: list[list[str]], nums: tuple[int, ...] = ()) ->
 def market_facts(b, m: dict) -> list[str]:
     n, where = int(m["awards"]), (f" {in_region(m['region'])}" if m.get("region") else "")
     month = month_name(m["month"])
-    facts = [f"{n:,} construction and building maintenance contracts were reported as awarded by public bodies{where} in {month}."]
+    facts = [f"{n:,} construction and building maintenance contracts were reported as awarded by public buyers{where} in {month}."]
     if int(m.get("firms") or 0):
-        facts.append(f"They went to {int(m['firms']):,} different companies.")
+        facts.append(f"They went to {int(m['firms']):,} different companies; a framework award often names several.")
     cats = sorted((c for c in m.get("categories") or [] if c["name"] in b.CATEGORY_LABELS), key=lambda c: -int(c["n"]))
     if cats:
         facts.append(f"The most common type of work was {b.CATEGORY_LABELS[cats[0]['name']].lower()}, with {int(cats[0]['n'])} awards.")
@@ -122,7 +129,7 @@ def market_page(b, cfg: dict, m: dict, buyer_paths: dict, regional: list[dict], 
               str(int(r["n"]))] for r in m["regions"]], nums=(1,)))
 
     def buyer_cell(name: str) -> str:
-        p = buyer_paths.get(name.strip().lower())
+        p = buyer_paths.get(buyer_key(name))
         return f'<a href="{p}">{html.escape(friendly(name))}</a>' if p else html.escape(friendly(name))
     if m.get("buyers"):
         parts.append("<h2>Buyers that awarded most</h2>" + table(
@@ -166,7 +173,7 @@ def insights_index(b, cfg: dict, months: list[dict], regional: list[dict]) -> tu
         rows.append([f'<a href="/insights/{ms}/">{month_name(m["month"])}</a>' + (f"<small>{regs}</small>" if regs else ""),
                      f'{int(m["awards"]):,}', b.money(m.get("median"))])
     body = (b.HEADER + '<main id="main" class="doc wide"><h1>Construction contract awards: monthly market reports</h1>'
-            f'<p class="lede dark">What UK public bodies awarded in construction and building maintenance, month by month: '
+            f'<p class="lede dark">What UK public buyers awarded in construction and building maintenance, month by month: '
             'how many contracts, typical values, the types of work, the buyers awarding most and the firms winning most.</p>'
             f'<h2>Latest: {month_name(latest["month"])}</h2><ul>' + "".join(f"<li>{html.escape(f)}</li>" for f in facts) + "</ul>"
             f'<p><a href="/insights/{month_slug(latest["month"])}/">Read the full report for {month_name(latest["month"])}</a></p>'
@@ -187,7 +194,7 @@ def buyer_slugs(b, buyers: list[dict]) -> dict:
         while s in seen:
             s, i = f"{base}-{i}", i + 1
         seen.add(s)
-        out[x["name"].strip().lower()] = f"/buyers/{s}/"
+        out[buyer_key(x["name"])] = f"/buyers/{s}/"
     return out
 
 
@@ -242,10 +249,10 @@ def buyer_page(b, cfg: dict, x: dict, path: str, open_rows: list[dict], region_p
 
 
 def buyers_index(b, buyers: list[dict], paths: dict) -> str:
-    rows = [[f'<a href="{paths[x["name"].strip().lower()]}">{html.escape(friendly(x["name"]))}</a>',
+    rows = [[f'<a href="{paths[buyer_key(x["name"])]}">{html.escape(friendly(x["name"]))}</a>',
              html.escape(x.get("region") or ""), str(int(x["awards"])), b.money(x.get("median"))] for x in buyers]
     return (b.HEADER + '<main id="main" class="doc wide"><h1>Public buyers of construction and maintenance work</h1>'
-            f'<p class="lede dark">The {len(buyers)} UK public bodies that reported the most construction and building maintenance '
+            f'<p class="lede dark">The {len(buyers)} UK public buyers, including councils, NHS bodies, housing providers and utilities, that reported the most construction and building maintenance '
             'contract awards in the last two years. Each page shows what the buyer awards, the firms that win most often, '
             'recent contracts and any open tenders.</p>'
             + table(["Buyer", "Region", "Awards in two years", "Median value"], rows, nums=(2, 3)) + CTA + "</main>")
@@ -311,13 +318,13 @@ def write(b, base: str, cfg: dict, out: Path, stats: dict, pages: list[dict], up
     if buyers:
         by_buyer: dict[str, list] = {}
         for r in listings:
-            by_buyer.setdefault((r.get("buyer") or "").strip().lower(), []).append(r)
+            by_buyer.setdefault(buyer_key(r.get("buyer") or ""), []).append(r)
         put("/buyers/", "Public buyers of construction and maintenance work",
             "The UK public bodies that award the most construction and building maintenance contracts: what they buy, who wins and what is open now.",
             buyers_index(b, buyers, bpaths))
         for x in buyers:
-            p = bpaths[x["name"].strip().lower()]
-            title, lede, bh = buyer_page(b, cfg, x, p, by_buyer.get(x["name"].strip().lower(), []), region_paths)
+            p = bpaths[buyer_key(x["name"])]
+            title, lede, bh = buyer_page(b, cfg, x, p, by_buyer.get(buyer_key(x["name"]), []), region_paths)
             put(p, title, lede, bh)
 
     months = [m for m in stats.get("market") or [] if int(m.get("awards") or 0) >= 200]
