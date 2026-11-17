@@ -2,7 +2,7 @@
   "site_url": "https://noticehawk.co.uk",
   "stats_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/site-stats",
   "contact_email": "hello@noticehawk.co.uk",
-  "signup_open": false,
+  "signup_open": true,
   "signup_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/lead-form",
   "unsubscribe_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/unsubscribe",
   "preferences_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/preferences",
@@ -10,5 +10,10 @@
   "analytics_token": "603ed6a7710144c883381ca4714c11b5",
   "login_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/login",
   "account_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/account",
-  "feedback_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/feedback"
+  "feedback_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/feedback",
+  "payment_links": {
+    "construction_basic": "https://buy.stripe.com/9B65kDdU26kb5k3djb8N200",
+    "construction_pro": "https://buy.stripe.com/14A28rbLUbEv27R1At8N202",
+    "construction_premium": "https://buy.stripe.com/aFabJ1g2adMDfYH92V8N201"
+  }
 }

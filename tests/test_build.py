@@ -41,7 +41,7 @@ def test_untrusted_text_is_escaped_and_bad_links_dropped(tmp_path):
 
 
 def test_signups_closed_shows_no_form(tmp_path):
-    build.build(STATS, CFG, tmp_path / "dist")
+    build.build(STATS, dict(CFG, signup_open=False), tmp_path / "dist")
     home = (tmp_path / "dist" / "index.html").read_text()
     assert "<form" not in home and "<input" not in home
     assert "mailto:hello@noticehawk.co.uk" in home
@@ -238,3 +238,14 @@ def test_feedback_page(tmp_path):
     page = (tmp_path / "dist" / "feedback" / "index.html").read_text()
     assert 'data-reason="wrong_area"' in page and "noindex" in page and "/feedback.js" in page
     assert 'data-feedback="https://' in (tmp_path / "dist" / "account" / "index.html").read_text()
+
+
+def test_plan_buttons_go_to_stripe_only_when_open(tmp_path):
+    links = {"construction_basic": "https://buy.stripe.com/b", "construction_pro": "https://buy.stripe.com/p",
+             "construction_premium": "https://buy.stripe.com/x"}
+    build.build(STATS, dict(CFG, signup_open=True, payment_links=links), tmp_path / "open")
+    home = (tmp_path / "open" / "index.html").read_text()
+    for url in links.values():
+        assert f'href="{url}"' in home
+    build.build(STATS, dict(CFG, signup_open=False, payment_links=links), tmp_path / "shut")
+    assert "buy.stripe.com" not in (tmp_path / "shut" / "index.html").read_text()

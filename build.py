@@ -91,6 +91,17 @@ WORK_TYPES = ["repairs_maintenance", "refurbishment", "new_build", "mechanical_e
               "groundworks_civils", "design_professional"]
 
 
+def pay_links(cfg: dict) -> dict:
+    """Plan buttons go to Stripe checkout once sign-ups are open; before that, to the early-access box."""
+    links = cfg.get("payment_links") or {}
+    out = {}
+    for key, product in (("pay_basic", "construction_basic"), ("pay_pro", "construction_pro"),
+                         ("pay_premium", "construction_premium")):
+        url = links.get(product) if cfg.get("signup_open") else None
+        out[key] = html.escape(url, quote=True) if url else "#start"
+    return out
+
+
 def start_block(cfg: dict, rates: list | None = None) -> str:
     email = html.escape(cfg["contact_email"])
     if not cfg.get("signup_open"):
@@ -479,6 +490,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         region_chips=chips(stats.get("regions") or [], None, {p["region"]: p["path"] for p in pages if p["region"] and not p["category"]}),
         category_chips=chips(stats.get("categories") or [], CATEGORY_LABELS, {p["category"]: p["path"] for p in pages if p["category"] and not p["region"]}),
         start_block=start_block(cfg, stats.get("rates")),
+        **pay_links(cfg),
         hero_note=("Three tenders a week for your region, free. No card needed." if cfg.get("signup_open")
                    else "Free accounts open shortly: three tenders a week for your region, no card needed."),
         faq_html="\n".join(f"<div><h3>{html.escape(q)}</h3><p>{html.escape(a)}</p></div>" for q, a in FAQ))
