@@ -1,6 +1,7 @@
 """Builds the static site into dist/ from the templates and the live public figures."""
 from __future__ import annotations
 
+import hashlib
 import html
 import json
 import re
@@ -467,11 +468,27 @@ def analytics(cfg: dict, head_extra: str) -> str:
     return f'<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{beacon}"></script>'
 
 
+_ASSET = re.compile(r'(href|src)="/([a-z]+\.(?:css|js))"')
+_ASSET_VERSIONS: dict[str, str] = {}
+
+
+def _versioned(match) -> str:
+    """Add a short fingerprint to our own stylesheet and scripts, so browsers and Cloudflare
+    fetch the new file as soon as it changes instead of showing a cached old one."""
+    name = match.group(2)
+    if name not in _ASSET_VERSIONS:
+        f = ROOT / "static" / name
+        _ASSET_VERSIONS[name] = hashlib.sha256(f.read_bytes()).hexdigest()[:10] if f.exists() else ""
+    v = _ASSET_VERSIONS[name]
+    return f'{match.group(1)}="/{name}{"?v=" + v if v else ""}"'
+
+
 def page(base: str, cfg: dict, path: str, title: str, description: str, body: str, head_extra: str = "") -> str:
-    return Template(base).substitute(
+    out = Template(base).substitute(
         title=html.escape(title), description=html.escape(description, quote=True),
         canonical=cfg["site_url"] + path, head_extra=head_extra, body=body, email=html.escape(cfg["contact_email"]),
         analytics=analytics(cfg, head_extra))
+    return _ASSET.sub(_versioned, out)
 
 
 # Readable titles: the buyer's reference codes and procedure markers dropped (same rules as the alert emails).
