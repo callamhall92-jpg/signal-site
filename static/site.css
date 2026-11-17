@@ -193,3 +193,14 @@ fieldset p.fine{margin:4px 0 10px}
 .guide-card p{margin:0;color:#3A4658;flex:1}
 .guide-card span{font-weight:700;text-decoration:underline;text-decoration-color:var(--amber);text-decoration-thickness:2px;text-underline-offset:4px}
 .guides-home .more{margin:28px 0 0;font-weight:700}
+
+.assist{margin-top:14px;padding:16px 18px;background:#F7F8FA;border-left:3px solid var(--amber,#F5A524);border-radius:4px;font-size:14px}
+.assist h4{margin:14px 0 6px;font-size:14px;color:var(--ink)}.assist h4:first-child{margin-top:0}
+.assist ul{margin:0;padding-left:18px}.assist li{margin:3px 0}
+.assist-note{font-size:13px;color:var(--grey);margin:6px 0}
+.assist-ticks{display:flex;flex-direction:column;gap:8px}
+.assist-ticks label{display:flex;gap:9px;align-items:flex-start;font-weight:400;min-height:24px}
+.assist-ticks input{width:20px;height:20px;flex:none;margin-top:1px}
+.assist-ticks .flag{font-weight:600}
+.assist-copy{width:100%;font:13px/1.4 monospace;margin-top:10px}
+.assist-open{font-weight:700}

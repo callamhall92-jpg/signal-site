@@ -2,7 +2,7 @@
 (function () {
   var main = document.getElementById("main");
   var token = new URLSearchParams(location.search).get("token") || "";
-  var state = { data: null, tab: "tenders", base: null };
+  var state = { data: null, tab: "tenders", base: null, assist: new URLSearchParams(location.search).get("assist") };
   var LABELS = { new_build: "New build", refurbishment: "Refurbishment", repairs_maintenance: "Repairs and maintenance",
     roofing: "Roofing", mechanical_electrical: "Mechanical and electrical", groundworks_civils: "Groundworks and civils",
     design_professional: "Design and professional" };
@@ -64,6 +64,118 @@
     return out;
   }
 
+  // AI assist: what a bid for this tender is likely to need, drawn from the notice, any published documents and our read of them.
+  var HAVE_KEY = "nh-have";
+  function have() { try { return JSON.parse(localStorage.getItem(HAVE_KEY) || "{}"); } catch (e) { return {}; } }
+  function setHave(id, on) { try { var h = have(); if (on) h[id] = 1; else delete h[id]; localStorage.setItem(HAVE_KEY, JSON.stringify(h)); } catch (e) { /* private browsing */ } }
+  function slug(text) { return text.toLowerCase().replace(/£[\d.,]+[mk]?/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+  function addDays(iso, n) { var d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function assistData(t) {
+    var f = t.facts || {}, df = t.doc_facts || {}, today = new Date().toISOString().slice(0, 10);
+    var stated = [], items = [], marks = [], ask = [], dates = [];
+    var mentions = (f.mentions || []).concat(df.mentions || []).filter(function (m, i, a) { return a.indexOf(m) === i; });
+    var insurance = mentions.filter(function (m) { return /insurance/.test(m); });
+    var schemes = mentions.filter(function (m) { return !/insurance|turnover|site visit/.test(m); });
+
+    dates.push(["Bids close", nice(t.deadline) + " (" + t.days + " day" + (t.days === 1 ? "" : "s") + ")"]);
+    if (f.questions_by && f.questions_by >= today) dates.push(["Questions to the buyer by", nice(f.questions_by)]);
+    else if (t.days > 7) dates.push(["Send questions by about", nice(addDays(t.deadline, -7)) + " (the notice gives no date; buyers usually stop answering a week before)"]);
+    if (t.days > 4) dates.push(["Have your price finished by", nice(addDays(t.deadline, -3))]);
+    dates.push(["Upload by", (t.days > 1 ? nice(addDays(t.deadline, -1)) : "today") + ". Portals reject late bids, even by a minute"]);
+
+    if (f.judged) stated.push("Scored " + f.judged.quality + "% on quality and " + f.judged.price + "% on price.");
+    if (f.months) stated.push("Contract length: " + f.months + " months" + (f.extension_months ? ", with up to " + f.extension_months + " more" : f.extension_option ? ", with an option to extend" : "") + ".");
+    if (f.framework) stated.push("This is a framework: a place on it does not guarantee any work.");
+    if (f.dps) stated.push("This is a dynamic purchasing system: you can usually apply at any time while it is open.");
+    if (f.lots) stated.push("Split into " + f.lots + " lots. You can normally bid for one or several.");
+    if (df.contract) stated.push("Form of contract: " + df.contract + ".");
+    if (df.turnover) stated.push("Minimum turnover: " + df.turnover + ".");
+    else if (mentions.indexOf("a minimum turnover") !== -1) stated.push("A minimum turnover is asked for. The figure is in the tender pack.");
+    if (df.site_visit_mandatory) stated.push("A site visit is mandatory. Book it straight away; missing it usually rules you out.");
+    else if (mentions.indexOf("a site visit") !== -1) stated.push("A site visit is mentioned. Check whether it is compulsory and when.");
+    if (df.social_value_pct) stated.push("Social value is " + df.social_value_pct + "% of the score.");
+    insurance.forEach(function (m) { stated.push("Asks for " + m + "."); });
+    if (schemes.length) stated.push("Names " + schemes.join(", ") + ".");
+    if (t.doc_note) stated.push("From the documents: " + t.doc_note);
+
+    function item(id, text, flagged) { items.push({ id: id, text: text, flagged: !!flagged }); }
+    schemes.forEach(function (m) { item("s-" + slug(m), m + " (named in this tender)", true); });
+    insurance.forEach(function (m) { item("i-" + slug(m) + "-" + (m.match(/£[\d.,]+[mk]?/) || [""])[0], m.charAt(0).toUpperCase() + m.slice(1) + " certificate (level asked for here)", true); });
+    if (!insurance.some(function (m) { return /public/.test(m); })) item("pl", "Public liability insurance certificate");
+    if (!insurance.some(function (m) { return /employer/.test(m); })) item("el", "Employer's liability insurance certificate");
+    item("co", "Company details: registered name, number, VAT number, address");
+    item("acc", "Last two years' accounts" + (df.turnover ? " showing turnover of " + df.turnover + " or more" : ""), !!df.turnover);
+    if (!schemes.length) item("hs", "Health and safety policy, and a safety accreditation if you hold one (CHAS, SafeContractor or similar)");
+    else item("hsp", "Health and safety policy");
+    item("refs", "Three references for similar work in the last three years, with contact names who will answer");
+    item("pol", "Standard policies: equality, environmental, modern slavery, safeguarding if working near the public");
+    item("method", "Method statement: how you will do this job, who will do it and how you will keep the site safe");
+    item("prog", "Programme of work with start and finish dates");
+    item("price", "Priced schedule or form of tender, filled in exactly as the buyer laid it out");
+    if (df.social_value_pct || (f.judged && f.judged.quality >= 30)) item("sv", "Social value answer: local jobs, apprentices, local suppliers, with numbers you will be held to", !!df.social_value_pct);
+    if (t.docs_portal || f.portal) item("portal-" + slug(t.docs_portal || "site"), "Supplier account on " + (t.docs_portal || "the buyer's portal") + ", needed to download the pack and to submit", true);
+
+    if (f.judged) {
+      if (f.judged.quality >= 50) marks.push("Most of the marks are for quality. A cheap price will not win this on its own: put your time into the written answers and back each claim with a job you have done.");
+      else if (f.judged.price >= 70) marks.push("This is mostly decided on price. Keep the written answers short and correct, and spend your time on the pricing.");
+      else marks.push("Price and quality both matter. Answer every question fully, then sharpen the price.");
+    } else marks.push("The notice does not say how bids are scored. The tender pack will. Read the scoring table before you write anything, and give the most words to the questions with the most marks.");
+    if (df.social_value_pct >= 10) marks.push("Social value carries " + df.social_value_pct + "%. That is often the gap between first and second place, so give it a proper answer.");
+    if (t.parts && t.parts.sme && t.parts.sme[0] >= t.parts.sme[1] * 0.7) marks.push("The buyer has marked this as suitable for smaller firms.");
+
+    if (!t.value) ask.push("What is the budget or estimated value?");
+    if (!f.judged) ask.push("How will bids be scored, and what are the weightings?");
+    if (!f.months) ask.push("When does the work start and how long does it run?");
+    if (f.framework) ask.push("How much work went through this framework last time, and how is it shared out?");
+    if (f.lots) ask.push("Is there a limit on how many lots one firm can win?");
+    if (mentions.indexOf("a site visit") !== -1 && !df.site_visit_mandatory) ask.push("Is the site visit compulsory, and what dates are offered?");
+    ask.push("Is there an incumbent contractor, and do TUPE staff transfers apply?");
+    return { dates: dates, stated: stated, items: items, marks: marks, ask: ask };
+  }
+  function assistText(t, a) {
+    var out = ["AI assist: " + t.title, t.buyer || "", t.url || "", "", "KEY DATES"];
+    a.dates.forEach(function (d) { out.push("- " + d[0] + ": " + d[1]); });
+    if (a.stated.length) { out.push("", "WHAT THE BUYER STATES"); a.stated.forEach(function (s) { out.push("- " + s); }); }
+    out.push("", "HAVE READY"); a.items.forEach(function (i) { out.push("[ ] " + i.text); });
+    out.push("", "WHERE THE MARKS ARE"); a.marks.forEach(function (m) { out.push("- " + m); });
+    out.push("", "QUESTIONS WORTH ASKING THE BUYER"); a.ask.forEach(function (q) { out.push("- " + q); });
+    out.push("", "From Noticehawk. Drawn from the notice and any published documents. Check the tender pack before you rely on it.");
+    return out.join("\n");
+  }
+  function assistPanel(t) {
+    var a = assistData(t), box = el("div", "assist"), held = have();
+    function section(title) { box.appendChild(el("h4", null, title)); var ul = el("ul"); box.appendChild(ul); return ul; }
+    var ul = section("Key dates");
+    a.dates.forEach(function (d) { var li = el("li"); li.appendChild(el("strong", null, d[0] + ": ")); li.appendChild(document.createTextNode(d[1])); ul.appendChild(li); });
+    if (a.stated.length) { ul = section("What the buyer states"); a.stated.forEach(function (s) { ul.appendChild(el("li", null, s)); }); }
+    else if (state.data.plan === "Basic") box.appendChild(el("p", "assist-note", "Professional adds the requirements pulled from each notice and its documents: insurance levels, accreditations, turnover, scoring and contract terms."));
+    box.appendChild(el("h4", null, "Have ready"));
+    box.appendChild(el("p", "assist-note", "Tick what you already hold. It is remembered on this device, so the next tender shows only what is missing."));
+    var list = el("div", "assist-ticks");
+    a.items.forEach(function (i) {
+      var lab = el("label", i.flagged ? "flag" : null), c = el("input");
+      c.type = "checkbox"; c.checked = !!held[i.id];
+      c.addEventListener("change", function () { setHave(i.id, c.checked); });
+      lab.appendChild(c); lab.appendChild(document.createTextNode(" " + i.text)); list.appendChild(lab);
+    });
+    box.appendChild(list);
+    ul = section("Where the marks are"); a.marks.forEach(function (m) { ul.appendChild(el("li", null, m)); });
+    ul = section("Questions worth asking the buyer"); a.ask.forEach(function (q) { ul.appendChild(el("li", null, q)); });
+    var foot = el("div", "card-actions"), copy = el("button", "linkish", "Copy this as a checklist");
+    copy.type = "button";
+    copy.addEventListener("click", function () {
+      var text = assistText(t, a);
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { copy.textContent = "Copied"; })
+        .catch(function () { var ta = el("textarea", "assist-copy"); ta.value = text; ta.rows = 12; box.appendChild(ta); ta.select(); copy.hidden = true; });
+    });
+    foot.appendChild(copy);
+    var g1 = el("a", null, "Paperwork checklist"); g1.href = "/guides/tender-paperwork-checklist/";
+    var g2 = el("a", null, "Writing answers that score"); g2.href = "/guides/writing-a-tender-response-that-scores-well/";
+    foot.appendChild(g1); foot.appendChild(g2);
+    box.appendChild(foot);
+    box.appendChild(el("p", "assist-note", "Drawn from the notice, any published documents and our read of them. It is a starting point, not the full requirement: check the tender pack before you rely on it."));
+    return box;
+  }
   function line(parent, label, text, cls) {
     var p = el("p", cls || "why");
     var s = el("strong", null, label + ": "); p.appendChild(s); p.appendChild(document.createTextNode(text)); parent.appendChild(p);
@@ -94,6 +206,17 @@
         .catch(function () { b.disabled = false; b.textContent = "That did not save. Try again"; });
     });
     var actions = el("div", "card-actions");
+    var help = el("button", "linkish assist-open", "AI assist: what this bid needs"), panel = null;
+    help.type = "button";
+    help.setAttribute("aria-expanded", "false");
+    function toggleAssist() {
+      if (panel) { panel.remove(); panel = null; } else { panel = assistPanel(t); body.appendChild(panel); }
+      help.setAttribute("aria-expanded", String(!!panel));
+      help.textContent = panel ? "Hide AI assist" : "AI assist: what this bid needs";
+    }
+    help.addEventListener("click", toggleAssist);
+    if (state.assist === t.id) { state.assist = null; setTimeout(function () { toggleAssist(); item.scrollIntoView({ block: "start" }); }, 0); }
+    actions.appendChild(help);
     actions.appendChild(b);
     var nope = el("button", "linkish", "Not for me");
     nope.type = "button";

@@ -287,8 +287,8 @@ def example_alert(stats: dict, updated_text: str) -> str:
             '<li><strong>The points line</strong> shows where the score came from, so you can see at a glance why a tender ranks where it does.</li>'
             '<li><strong>Check first</strong> flags anything the notice leaves out and anything that should give you pause, such as a short deadline.</li>'
             '<li><strong>Remind me</strong> adds the tender to your shortlist. You get a reminder seven days and two days before it closes.</li>'
-            '</ul><p>Free accounts get three tenders a week without the scores. Professional and Premium alerts also list contracts coming up for renewal '
-            'and newly awarded contracts near you.</p>'
+            '</ul><p>Free accounts get three tenders a week without the scores. Paid alerts also list contracts coming up for renewal, '
+            'and Professional and Premium add newly awarded contracts near you.</p>'
             '<div class="cta-box"><div><strong>Get this for your region.</strong><span>Three tenders a week free, no card needed.</span></div>'
             '<a class="btn" href="/#start">Start free</a></div></main>')
 
