@@ -661,7 +661,36 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p class="lede dark">For customers on a paid plan. Enter the email address you subscribed with and we will send you a sign-in link. There is no password to remember.</p>'
         + login_form + '<p class="fine">On the free plan? Your alerts arrive by email every Monday; there is nothing to sign in to.</p>'
         '</main><script src="/login.js" defer></script>', '<meta name="robots" content="noindex">'))
-    # Subcontract work board: contractors post work free; published after email confirmation and approval.
+    # Open frameworks and dynamic markets: the routes onto a buyer's approved list, grouped by type of work.
+    fw = [f for f in (stats.get("frameworks") or []) if f.get("url")]
+    def fw_item(f: dict) -> str:
+        bits = [f.get("region"), money(f.get("value")) if f.get("value") else None,
+                f"runs {f['months']} months" if f.get("months") else None, f"{f['lots']} lots" if f.get("lots") else None,
+                "closes " + datetime.strptime(f["deadline"][:10], "%Y-%m-%d").strftime("%-d %B %Y")]
+        kind = "Dynamic market" if f.get("kind") == "dynamic" else "Framework"
+        return ('<div class="mail-item work-item"><div>'
+                f'<a href="{html.escape(f["url"], quote=True)}" rel="noopener"><strong>{html.escape(tidy_title(f["title"]))}</strong></a>'
+                f'<p>{html.escape(f.get("buyer") or "Buyer not stated")}</p>'
+                f'<p>{html.escape(kind + " | " + " | ".join(x for x in bits if x))}</p></div></div>')
+    fw_sections = ""
+    for cat in WORK_TYPES:
+        hits = [f for f in fw if f.get("category") == cat]
+        if hits:
+            fw_sections += f'<h2>{html.escape(CATEGORY_LABELS[cat])} ({len(hits)})</h2><div class="mail">' + "".join(fw_item(f) for f in hits) + "</div>"
+    (out / "frameworks").mkdir()
+    (out / "frameworks" / "index.html").write_text(page(
+        base, cfg, "/frameworks/", "Open construction frameworks and dynamic markets | Noticehawk",
+        "Public-sector construction and maintenance frameworks and dynamic markets open to applications now, by type of work, with closing dates and links to the official notices.",
+        HEADER + '<main id="main" class="doc wide"><h1>Open frameworks and dynamic markets</h1>'
+        f'<p class="lede dark">Construction and maintenance frameworks and dynamic markets open to applications now: {len(fw)}. Counted {updated_text} from official notices.</p>'
+        '<p>A framework is a list of approved firms that a public buyer can give work to for several years without advertising each job. '
+        'A dynamic market is the same idea, but firms can usually join at any time. Getting onto one is often the easiest way into public work for a smaller firm, '
+        'though a place on the list does not guarantee any work. <a href="/guides/frameworks-and-call-offs/">How frameworks and call-offs work</a>.</p>'
+        + (fw_sections or '<p>None are open in our data right now. This page is rebuilt every day.</p>')
+        + '<div class="cta-box"><div><strong>Get new frameworks for your region by email.</strong>'
+        '<span>Three tenders a week free, or every match scored, with AI assist to show what each application needs, from £29 a month. <a href="/#compare">What each plan includes</a>.</span></div>'
+        '<a class="btn" href="/#start">Start free</a></div></main>'))
+    # Subcontract work board: contractors post work free; published once the poster confirms their email address.
     work_api = html.escape(cfg["work_url"], quote=True)
     regions_opts = "".join(f'<option>{html.escape(r)}</option>' for r in REGIONS)
     work_opts = "".join(f'<option value="{w}">{html.escape(CATEGORY_LABELS[w])}</option>' for w in WORK_TYPES)
@@ -802,7 +831,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     today = updated.strftime("%Y-%m-%d")
     urls = "".join(f"<url><loc>{cfg['site_url']}{p}</loc><lastmod>{today}</lastmod></url>"
                    for p in ["/", "/this-week/", "/tenders/"] + [p["path"] for p in pages]
-                   + ["/how-it-works/", "/example-alert/", "/subcontract-work/", "/post-work/", "/privacy/", "/terms/"] + made["paths"] + guide_paths)
+                   + ["/how-it-works/", "/example-alert/", "/frameworks/", "/subcontract-work/", "/post-work/", "/privacy/", "/terms/"] + made["paths"] + guide_paths)
     (out / "sitemap.xml").write_text(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n')
     (out / "robots.txt").write_text(
         "User-agent: *\nAllow: /\n\n"
@@ -831,6 +860,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         f"- [Browse tenders]({cfg['site_url']}/tenders/): open tenders by region and type of work, {len(pages)} pages\n"
         f"- [How it works]({cfg['site_url']}/how-it-works/): data sources, daily checks, handling of changed and withdrawn notices, the scoring table, limits\n"
         f"- [Example alert]({cfg['site_url']}/example-alert/): the weekly subscriber email with live tenders\n"
+        f"- [Open frameworks and dynamic markets]({cfg['site_url']}/frameworks/): construction frameworks open to applications now, by type of work\n"
         f"- [Subcontract work board]({cfg['site_url']}/subcontract-work/): work packages posted by contractors who want prices\n"
         f"- [Post work free]({cfg['site_url']}/post-work/): form for contractors to post a work package\n"
         + "".join(f"- [{t}]({cfg['site_url']}/guides/{s_}/): {d}\n" for s_, t, d in GUIDES)

@@ -154,5 +154,21 @@
    "days": 22,
    "url": "javascript:alert(1)"
   }
- ]
+ ],
+ "frameworks": [
+  {
+   "title": "ITT - Roofing Repairs Framework 2027",
+   "buyer": "Kent County Council",
+   "region": "South East",
+   "category": "roofing",
+   "value": 2000000,
+   "deadline": "2026-12-20",
+   "days": 30,
+   "url": "https://www.find-tender.service.gov.uk/Notice/1",
+   "months": 48,
+   "lots": 3,
+   "kind": "framework"
+  }
+ ],
+ "posted": []
 }
