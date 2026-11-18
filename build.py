@@ -508,8 +508,13 @@ def analytics(cfg: dict, head_extra: str) -> str:
     token = cfg.get("analytics_token")
     if not token or "noindex" in head_extra:
         return ""
-    beacon = html.escape(json.dumps({"token": token}), quote=True)
-    return f'<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{beacon}"></script>'
+    # A device switched off with ?team=on (our own phones and laptops) is not counted.
+    beacon = json.dumps(json.dumps({"token": token}))
+    return ('<script>(function(){var off=false;try{var t=new URLSearchParams(location.search).get("team");'
+            'if(t==="on")localStorage.setItem("nh_team","1");if(t==="off")localStorage.removeItem("nh_team");'
+            'off=localStorage.getItem("nh_team")==="1";}catch(e){}if(off)return;var s=document.createElement("script");s.defer=true;'
+            's.src="https://static.cloudflareinsights.com/beacon.min.js";s.setAttribute("data-cf-beacon",' + beacon + ');'
+            'document.head.appendChild(s);})();</script>')
 
 
 _ASSET = re.compile(r'(href|src)="/([a-z]+\.(?:css|js))"')
