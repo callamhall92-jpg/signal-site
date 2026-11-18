@@ -43,6 +43,7 @@ FAQ = [
     ("Does Noticehawk help with the bid?",
      "Yes, on paid plans. AI assist reads each notice and any documents the buyer has published, and gives you the key dates, "
      "what the buyer asks for (insurance, accreditations, turnover, how bids are scored) and a checklist of what to have ready. "
+     "You can paste your draft answers to see what is missing, and a full AI review with a score is coming soon. "
      "It does not write or submit the bid: you bid through the buyer's own portal."),
     ("What is in each plan?",
      "The table under the plans on this page lists every feature against every plan, from Free to Premium."),
@@ -72,6 +73,7 @@ PLAN_MATRIX = [
     ("Contracts coming up for renewal", [N, Y, Y, Y]),
     ("AI assist: key dates and a checklist for each bid", [N, Y, Y, Y]),
     ("Draft check: paste your answers and see what is missing", [N, Y, Y, Y]),
+    ("AI review of your written bid, with a score", [N, N, "Soon", "Soon"]),
     ("AI assist: the buyer's stated requirements (insurance, accreditations, turnover, scoring)", [N, N, Y, Y]),
     ("What the tender documents say", [N, N, Y, Y]),
     ("Who each buyer usually awards to, and who wins locally", [N, N, Y, Y]),

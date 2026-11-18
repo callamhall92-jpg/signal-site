@@ -198,6 +198,7 @@
       list("Not found in your draft", r.missing, "miss");
       list("Worth fixing", r.flags, "miss");
       list("Covered", r.found, "ok");
+      res.appendChild(el("p", "assist-note", "Coming soon on Professional and Premium: a full AI review that reads your answers against the buyer's questions and scoring, and gives the bid a score."));
       res.appendChild(el("p", "assist-note", "This checks what is there against the checklist above. It cannot judge quality or tell you how a buyer will mark it, and some items belong in attachments, not in the written answers."));
     });
     wrap.appendChild(ta); wrap.appendChild(go); wrap.appendChild(res);
