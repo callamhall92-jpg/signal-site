@@ -20,8 +20,10 @@ CTA = ('<div class="cta-box"><div><strong>Get the tenders for your region and ty
 METHOD = ('<h2>How these figures are made</h2><p>We count contract award notices published on Find a Tender and Contracts Finder '
           'that we classify as construction or building maintenance work from the notice\'s description and codes. '
           'Each is dated by the award date in the notice. Buyers often publish award notices some weeks after the award, '
-          'so the most recent months grow as late notices arrive. Values are the figures stated in the notices; many are estimates, '
-          'and framework values are ceilings. Firms are named only where the notice identifies a company. '
+          'so the most recent months grow as late notices arrive. Values are the figures stated in the notices; many are estimates. '
+          'The typical value is the median: half of the valued awards were below it and half above. A framework notice gives one '
+          'total for the whole framework and repeats it against every firm appointed, so we count those appointments as awards '
+          'but leave their values out of the median. Firms are named only where the notice identifies a company. '
           'Contains public sector information licensed under the Open Government Licence v3.0.</p>')
 _SMALL = {"and", "of", "the", "for", "in", "on", "at", "to", "de", "y"}
 _UPPER = {"nhs", "uk", "llp", "plc", "gb", "hm", "bbc", "nhsbt", "ii", "iii"}

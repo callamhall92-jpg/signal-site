@@ -100,6 +100,32 @@ def compare_table() -> str:
             f'<tbody>{rows}</tbody></table></div>')
 
 
+NATIONS = [
+    ("England", "Find a Tender and Contracts Finder", "Nothing we know of: both services are read in full."),
+    ("Scotland", "Find a Tender and Public Contracts Scotland", "Small contracts let by invitation (Quick Quotes) are never published, so no service can show them."),
+    ("Wales", "Find a Tender", "Smaller contracts published only on Sell2Wales are not yet included. Its data feed is out of service; we add it when it returns."),
+    ("Northern Ireland", "Find a Tender", "Smaller contracts published only on eTendersNI are not included. It offers no data feed."),
+]
+
+
+def coverage_table(stats: dict) -> str:
+    cov = stats.get("coverage") or []
+    open_by = {n: sum(int((c.get("nations") or {}).get(n, 0)) for c in cov) for n, _, _ in NATIONS}
+    rows = "".join(
+        f'<tr><td data-label="Nation"><strong>{n}</strong></td><td data-label="Sources read">{html.escape(src)}</td>'
+        f'<td data-label="Open tenders now">{open_by[n] if cov else ""}</td><td data-label="What is missing">{html.escape(gap)}</td></tr>'
+        for n, src, gap in NATIONS)
+    checked = ""
+    seen = [(c["name"], c["checked"]) for c in cov if c.get("checked")]
+    if seen:
+        def when(ts: str) -> str:
+            d = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            return f"{d.day} {d:%B} at {d:%H:%M}"
+        checked = '<p class="fine">Last read: ' + "; ".join(f"{html.escape(n)}, {when(t)}" for n, t in seen) + " (UTC). A framework or dynamic market is a route to work, not a guarantee of any.</p>"
+    return ('<div class="tablebox light"><table class="stack"><thead><tr><th>Nation</th><th>Sources read</th><th>Open tenders now</th><th>What is missing</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></div>{checked}')
+
+
 def money(value) -> str:
     if value is None or float(value) < 500:      # buyers sometimes enter £0 or £1 as a placeholder
         return "Not stated"
@@ -532,7 +558,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         category_chips=chips(stats.get("categories") or [], CATEGORY_LABELS, {p["category"]: p["path"] for p in pages if p["category"] and not p["region"]}),
         start_block=start_block(cfg, stats.get("rates")),
         **pay_links(cfg),
-        guide_cards=guide_cards(), compare_table=compare_table(),
+        guide_cards=guide_cards(), compare_table=compare_table(), coverage_table=coverage_table(stats),
         hero_note=("Three tenders a week for your region, free. No card needed." if cfg.get("signup_open")
                    else "Free accounts open shortly: three tenders a week for your region, no card needed."),
         faq_html="\n".join(f"<div><h3>{html.escape(q)}</h3><p>{html.escape(a)}</p></div>" for q, a in FAQ))
@@ -548,7 +574,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         (out / name).mkdir()
         (out / name / "index.html").write_text(page(base, cfg, f"/{name}/", title, description, body))
     how = Template((ROOT / "templates" / "how-it-works.html").read_text()).substitute(
-        header=HEADER, email=html.escape(cfg["contact_email"]))
+        header=HEADER, email=html.escape(cfg["contact_email"]), coverage_table=coverage_table(stats))
     (out / "how-it-works").mkdir()
     (out / "how-it-works" / "index.html").write_text(page(
         base, cfg, "/how-it-works/", "How Noticehawk works: sources, checks and scoring | Noticehawk",
@@ -701,6 +727,8 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         HEADER + f'<main id="main" class="doc wide" data-api="{work_api}"><h1>Subcontract work</h1>'
         '<p class="lede dark">Work packages posted by contractors who want prices. Reply to the contractor directly; we take no fee and no commission.</p>'
         '<p><a class="btn" href="/post-work/">Post work free</a></p>'
+        '<div class="work-filters"><label>Type of work<select id="work-trade"><option value="">All</option>'
+        + work_opts + '</select></label><label>Region<select id="work-region"><option value="">All</option>' + regions_opts + '</select></label></div>'
         '<div id="work-list" class="mail" aria-live="polite"><p>Loading the board.</p></div>'
         '<h2>How it works</h2><ul>'
         '<li>A contractor posts the work, where it is, and the date they want prices by.</li>'

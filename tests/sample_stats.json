@@ -170,5 +170,28 @@
    "kind": "framework"
   }
  ],
- "posted": []
+ "posted": [],
+ "coverage": [
+  {
+   "source": "find_a_tender",
+   "name": "Find a Tender",
+   "checked": "2026-11-18T04:31:02.123456+00:00",
+   "open": 384,
+   "nations": {
+    "England": 300,
+    "Wales": 40,
+    "Scotland": 18,
+    "Northern Ireland": 26
+   }
+  },
+  {
+   "source": "contracts_finder",
+   "name": "Contracts Finder",
+   "checked": "2026-11-18T04:33:00+00:00",
+   "open": 20,
+   "nations": {
+    "England": 20
+   }
+  }
+ ]
 }

@@ -29,9 +29,16 @@
   var list = document.getElementById("work-list");
   if (list) {
     fetch(main.dataset.api).then(function (r) { return r.json(); }).then(function (d) {
-      list.textContent = "";
-      if (!d.posts || !d.posts.length) { list.appendChild(el("p", null, "No work is posted right now. The board is new; if you have a package to price, be the first to post.")); return; }
-      d.posts.forEach(function (p) { list.appendChild(card(p)); });
+      var trade = document.getElementById("work-trade"), region = document.getElementById("work-region"), posts = d.posts || [];
+      function draw() {
+        list.textContent = "";
+        if (!posts.length) { list.appendChild(el("p", null, "No work is posted right now. The board is new; if you have a package to price, be the first to post.")); return; }
+        var shown = posts.filter(function (p) { return (!trade.value || p.category === trade.value) && (!region.value || p.region === region.value); });
+        if (!shown.length) list.appendChild(el("p", null, "Nothing posted for that type of work and region right now."));
+        shown.forEach(function (p) { list.appendChild(card(p)); });
+      }
+      trade.addEventListener("change", draw); region.addEventListener("change", draw);
+      draw();
     }).catch(function () { list.textContent = "We could not load the board just now. Try again shortly."; });
   }
 

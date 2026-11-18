@@ -230,3 +230,4 @@ fieldset p.fine{margin:4px 0 10px}
 @media(max-width:640px){.compare{font-size:13px}.compare th,.compare td{padding:9px 4px}.compare thead th:first-child,.compare tbody th{width:48%;padding-left:10px}
 .compare .long{display:none}.compare .short{display:inline}}
 .cta-box span a{color:#fff;text-decoration:underline}
+.work-filters{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0}.work-filters label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px;flex:1;min-width:150px}.work-filters select{font:inherit;padding:11px;border:1px solid var(--line);border-radius:4px;min-height:44px;background:#fff}
