@@ -67,7 +67,7 @@ PLAN_MATRIX = [
     ("New matches by email each weekday", [N, Y, Y, Y]),
     ("Score out of 100, the reasons, and our short read", [N, Y, Y, Y]),
     ("Your tenders online, filtered by county, council or distance", [N, Y, Y, Y]),
-    ("Scores tuned to the contract sizes you want", [N, Y, Y, Y]),
+    ("Scores tuned to your business: contract size, travel distance, specialisms and work to leave out", [N, Y, Y, Y]),
     ("Shortlist with deadline reminders", [N, Y, Y, Y]),
     ("Contracts coming up for renewal", [N, Y, Y, Y]),
     ("AI assist: key dates and a checklist for each bid", [N, Y, Y, Y]),
@@ -660,6 +660,21 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<select id="min_value"><option value="">Any size</option><option value="10000">£10,000</option><option value="25000">£25,000</option><option value="50000">£50,000</option><option value="100000">£100,000</option><option value="250000">£250,000</option></select>'
         '<label for="max_value">Largest contract you would take on</label>'
         '<select id="max_value"><option value="">Any size</option><option value="100000">£100,000</option><option value="250000">£250,000</option><option value="500000">£500,000</option><option value="1000000">£1 million</option><option value="2000000">£2 million</option><option value="5000000">£5 million</option></select></fieldset>'
+        '<fieldset id="profile" hidden><legend>Your business</legend>'
+        '<p class="fine">The more we know about your firm, the better the scores and the order of your tenders match it. All of this is optional.</p>'
+        '<label for="base_postcode">Your base postcode</label>'
+        '<input id="base_postcode" type="text" autocomplete="postal-code" placeholder="e.g. TN9 1AA" maxlength="8">'
+        '<label for="max_miles">How far you travel for work</label>'
+        '<select id="max_miles"><option value="">Any distance</option><option value="15">15 miles</option><option value="30">30 miles</option><option value="50">50 miles</option><option value="75">75 miles</option><option value="100">100 miles</option><option value="150">150 miles</option></select>'
+        '<p class="fine">Tenders beyond this stay in your list but score lower, and say how far they are.</p>'
+        '<label for="specialisms">What you specialise in, one per line <span class="fine">(up to 8)</span></label>'
+        '<textarea id="specialisms" rows="4" placeholder="flat roofing&#10;fire doors&#10;heat pumps"></textarea>'
+        '<p class="fine">A tender that mentions one scores higher and says so.</p>'
+        '<label for="avoid">Work to leave out, one per line <span class="fine">(up to 8)</span></label>'
+        '<textarea id="avoid" rows="3" placeholder="asbestos&#10;scaffolding"></textarea>'
+        '<p class="fine">A tender that mentions one of these is not sent to you.</p>'
+        '<label class="tick"><input id="skip_frameworks" type="checkbox"> <span>Leave out frameworks, where a place on the list does not guarantee work</span></label>'
+        '</fieldset>'
         '<fieldset id="watch" hidden><legend>Watchlists <span class="fine">(Premium)</span></legend>'
         '<label for="keywords">Keywords to watch, one per line <span class="fine" id="keyword-limit"></span></label>'
         '<textarea id="keywords" rows="4" placeholder="asbestos&#10;fire doors"></textarea>'

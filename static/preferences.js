@@ -5,7 +5,7 @@
   var msg = document.getElementById("pref-msg");
   var token = new URLSearchParams(location.search).get("token");
   var limits = { regions: 1, trades: 1 };
-  var watch = false, fit = false;
+  var watch = false, fit = false, profile = false;
   function lines(id) {
     return document.getElementById(id).value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
   }
@@ -48,6 +48,17 @@
         el.value = v;
       });
     }
+    if (p.fit && p.profile) {
+      profile = true;
+      document.getElementById("profile").hidden = false;
+      document.getElementById("base_postcode").value = p.profile.base_postcode || "";
+      var miles = document.getElementById("max_miles"), m = p.profile.max_miles ? String(p.profile.max_miles) : "";
+      if (m && !Array.prototype.some.call(miles.options, function (o) { return o.value === m; })) miles.add(new Option(m + " miles", m));
+      miles.value = m;
+      document.getElementById("specialisms").value = (p.profile.specialisms || []).join("\n");
+      document.getElementById("avoid").value = (p.profile.avoid || []).join("\n");
+      document.getElementById("skip_frameworks").checked = !!p.profile.skip_frameworks;
+    }
     if (p.max_keywords > 0 || p.max_competitors > 0) {
       watch = true;
       document.getElementById("watch").hidden = false;
@@ -69,6 +80,11 @@
       body.min_value = document.getElementById("min_value").value || null;
       body.max_value = document.getElementById("max_value").value || null;
     }
+    if (profile) {
+      body.profile = { base_postcode: document.getElementById("base_postcode").value.trim(),
+        max_miles: document.getElementById("max_miles").value ? Number(document.getElementById("max_miles").value) : null,
+        specialisms: lines("specialisms"), avoid: lines("avoid"), skip_frameworks: document.getElementById("skip_frameworks").checked };
+    }
     return body;
   }
   form.addEventListener("submit", function (e) {
@@ -85,6 +101,9 @@
       if (r.status === 200) say("Saved. Your next alert will use these choices.", true);
       else if (r.body.error === "too_few") say("Choose at least one region and one type of work.", false);
       else if (r.body.error === "watch_too_many") say("That is more keywords, competitors or buyers than your plan includes. Remove some and save again.", false);
+      else if (r.body.error === "profile_bad_postcode") say("We could not find that postcode. Check it and save again, or leave it blank.", false);
+      else if (r.body.error === "profile_too_many") say("Up to 8 specialisms and 8 things to leave out. Remove some and save again.", false);
+      else if (r.body.error === "profile_bad_length") say("Each specialism or thing to leave out needs to be between 3 and 40 characters.", false);
       else if (r.body.error === "fit_bad_range") say("The smallest contract needs to be less than the largest.", false);
       else if (r.body.error === "watch_bad_length") say("Each keyword or name needs to be between 3 and 60 characters.", false);
       else if (r.body.error === "too_many") say("That is more than your plan includes. Untick one, or upgrade from the pricing page.", false);

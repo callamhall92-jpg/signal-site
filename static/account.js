@@ -29,14 +29,22 @@
     if (low !== null && value < low) return [Math.round(full * (value >= low * 0.5 ? 0.6 : 0.2)), "Smaller than the contracts you said are worth bidding for"];
     return [full, null];
   }
+  // The same rules as the alert emails: the subscriber's business profile, then their contract sizes.
   function personalise(list, low, high) {
-    if (low === null && high === null) return list;
-    return list.map(function (t) {
-      if (t.value === null || !t.parts || !t.parts.value) return t;
-      var p = sizePoints(Number(t.value), low, high, t.parts.value[1]);
-      var parts = Object.assign({}, t.parts, { value: [p[0], t.parts.value[1]] });
-      return Object.assign({}, t, { score: Math.max(0, Math.min(100, t.score - t.parts.value[0] + p[0])), parts: parts, fitNote: p[1] });
-    }).sort(function (a, b) { return b.score - a.score || a.days - b.days; });
+    var sized = low !== null || high !== null, any = false;
+    var out = list.filter(function (t) { return !(t.profile && t.profile.drop); }).map(function (t) {
+      var prof = t.profile || {}, notes = (prof.notes || []).slice(), score = t.score + (prof.delta || 0), parts = t.parts;
+      if (t.profile) any = true;
+      if (sized && t.value !== null && parts && parts.value) {
+        var p = sizePoints(Number(t.value), low, high, parts.value[1]);
+        score = score - parts.value[0] + p[0];
+        parts = Object.assign({}, parts, { value: [p[0], parts.value[1]] });
+        if (p[1]) notes.push(p[1]);
+      }
+      if (!notes.length && score === t.score) return t;
+      return Object.assign({}, t, { score: Math.max(0, Math.min(100, score)), parts: parts, fitNote: notes.join(". ") || null });
+    });
+    return sized || any ? out.sort(function (a, b) { return b.score - a.score || a.days - b.days; }) : out;
   }
 
   function intelLines(i) {
