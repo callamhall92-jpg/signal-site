@@ -233,3 +233,5 @@ fieldset p.fine{margin:4px 0 10px}
 .work-filters{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0}.work-filters label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px;flex:1;min-width:150px}.work-filters select{font:inherit;padding:11px;border:1px solid var(--line);border-radius:4px;min-height:44px;background:#fff}
 .doc-form label.tick{display:flex;gap:10px;align-items:flex-start;font-weight:400}.doc-form label.tick input{width:20px;height:20px;flex:none;margin-top:2px}
 #profile input[type=text],#profile select,#fit select{font:inherit;padding:12px;border:1px solid var(--line);border-radius:4px;min-height:44px;background:#fff;color:var(--ink);width:100%;max-width:320px;display:block}
+.draft{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.draft textarea{width:100%;font:inherit;font-size:14px;padding:10px;border:1px solid var(--line);border-radius:4px;margin:6px 0 10px}
+.draft-score{font-weight:700;font-size:16px;margin:12px 0 4px}.draft-result ul.miss li{color:#9A3412}.draft-result ul.ok li{color:var(--grey)}

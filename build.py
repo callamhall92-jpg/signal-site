@@ -51,7 +51,7 @@ FAQ = [
      "There is no fee and no commission."),
     ("What does it cost?",
      "The Free plan sends three tenders a week for one region and one type of work. "
-     "Paid plans start at £29 a month and can be cancelled at any time."),
+     "Paid plans start at £29 a month and can be cancelled at any time. No VAT is added to our prices."),
 ]
 
 
@@ -60,7 +60,7 @@ FAQ = [
 PLAN_NAMES = ["Free", "Basic", "Professional", "Premium"]
 Y, N = True, False
 PLAN_MATRIX = [
-    ("Price a month", ["£0", "£29", "£79", "£149"]),
+    ("Price a month, no VAT added", ["£0", "£29", "£79", "£149"]),
     ("Regions", ["1", "1", "3", "All"]),
     ("Types of work", ["1", "1", "3", "All"]),
     ("Matching tenders in the Monday alert", ["3", "All", "All", "All"]),
@@ -71,6 +71,7 @@ PLAN_MATRIX = [
     ("Shortlist with deadline reminders", [N, Y, Y, Y]),
     ("Contracts coming up for renewal", [N, Y, Y, Y]),
     ("AI assist: key dates and a checklist for each bid", [N, Y, Y, Y]),
+    ("Draft check: paste your answers and see what is missing", [N, Y, Y, Y]),
     ("AI assist: the buyer's stated requirements (insurance, accreditations, turnover, scoring)", [N, N, Y, Y]),
     ("What the tender documents say", [N, N, Y, Y]),
     ("Who each buyer usually awards to, and who wins locally", [N, N, Y, Y]),

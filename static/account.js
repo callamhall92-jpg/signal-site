@@ -150,6 +150,59 @@
     out.push("", "From Noticehawk. Drawn from the notice and any published documents. Check the tender pack before you rely on it.");
     return out.join("\n");
   }
+  // Draft check: runs in the browser. The draft is not sent to us or stored.
+  var CHECKS = [
+    ["pl", /public liability/i], ["el", /employer'?s'? liability/i], ["acc", /accounts|turnover/i], ["hs", /health and safety|chas|safecontractor|ssip/i],
+    ["hsp", /health and safety/i], ["refs", /reference|referee|case stud/i], ["pol", /equality|environmental|modern slavery|safeguarding/i],
+    ["method", /method statement|methodology|we will (carry out|deliver|undertake)|sequence of work/i], ["prog", /programme|start date|completion|week \d|weeks/i],
+    ["price", /£\s?\d|price|rates|schedule of rates/i], ["sv", /social value|apprentice|local (labour|jobs|supplier|employment)/i], ["co", /company (number|registration)|registered (office|in)|vat (number|no)/i]
+  ];
+  function draftCheck(a, text) {
+    var words = (text.match(/\S+/g) || []).length, out = { found: [], missing: [], flags: [], words: words };
+    a.items.forEach(function (i) {
+      var rule = null;
+      CHECKS.forEach(function (c) { if (i.id === c[0] || i.id.indexOf(c[0] + "-") === 0) rule = c[1]; });
+      if (!rule && /^[si]-/.test(i.id)) {           // a scheme or insurance named in this tender: look for its own words
+        var key = i.text.replace(/\s*\(.*$/, "").replace(/ certificate$/i, "");
+        var amount = key.match(/£[\d.,]+\s?[mk]?/i), name = key.replace(/£[\d.,]+\s?[mk]?/i, "").trim().split(/\s+/).slice(0, 2).join(" ");
+        rule = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+        if (rule.test(text) && amount && text.replace(/[\s,]/g, "").toLowerCase().indexOf(amount[0].replace(/[\s,]/g, "").toLowerCase()) === -1)
+          out.flags.push("You mention " + name.toLowerCase() + " but not the " + amount[0] + " level this tender asks for.");
+      }
+      if (!rule) return;
+      (rule.test(text) ? out.found : out.missing).push(i.text);
+    });
+    var figures = (text.match(/\d[\d,.]*\s?(%|per cent|days?|hours?|weeks?|years?|staff|operatives|m2|sqm)|£\s?\d/gi) || []).length;
+    if (words >= 150 && figures < 3) out.flags.push("Few figures. Evaluators mark evidence: add numbers such as response times, contract values, staff, percentages.");
+    var soft = (text.match(/\b(we believe|we strive|we aim to|we pride ourselves|passionate|world[- ]class|best[- ]in[- ]class|second to none)\b/gi) || []).length;
+    if (soft >= 2) out.flags.push("Claims without proof (" + soft + " phrases such as “we pride ourselves”, “we aim to”). Replace each with what you did, for whom, and the result.");
+    if (words >= 150 && !/\b(20\d\d|for (the )?[A-Z][a-z]+ (Council|Borough|Housing|School|NHS|Trust|University)|contract for)\b/.test(text)) out.flags.push("No past job named. Name a similar contract, the client and the year.");
+    if (words > 0 && words < 150) out.flags.push("Only " + words + " words. If this is the whole answer it is probably too thin to score well.");
+    if (/\b(tbc|xxx|insert|lorem|\[.*?\])\b/i.test(text)) out.flags.push("Looks like a placeholder is still in the text (TBC, XXX, [brackets] or “insert”).");
+    var total = out.found.length + out.missing.length;
+    out.score = Math.max(0, Math.min(100, Math.round((total ? out.found.length / total : 0) * 80 + 20 - out.flags.length * 5)));
+    return out;
+  }
+  function draftBox(t, a) {
+    var wrap = el("div", "draft"), ta = el("textarea"), go = el("button", "btn small", "Check my draft"), res = el("div", "draft-result");
+    wrap.appendChild(el("h4", null, "Check your draft before you send it"));
+    wrap.appendChild(el("p", "assist-note", "Paste your written answers below. The check runs on your device: your draft is not sent to us or saved."));
+    ta.rows = 7; ta.placeholder = "Paste your draft answers here"; ta.setAttribute("aria-label", "Your draft answers");
+    go.type = "button";
+    go.addEventListener("click", function () {
+      var text = ta.value.trim(); res.textContent = "";
+      if (!text) { res.appendChild(el("p", "assist-note", "Paste your draft first.")); return; }
+      var r = draftCheck(a, text);
+      res.appendChild(el("p", "draft-score", "Completeness: " + r.score + " out of 100 (" + r.words.toLocaleString("en-GB") + " words)"));
+      function list(title, arr, cls) { if (!arr.length) return; res.appendChild(el("h4", null, title)); var ul = el("ul", cls); arr.forEach(function (x) { ul.appendChild(el("li", null, x)); }); res.appendChild(ul); }
+      list("Not found in your draft", r.missing, "miss");
+      list("Worth fixing", r.flags, "miss");
+      list("Covered", r.found, "ok");
+      res.appendChild(el("p", "assist-note", "This checks what is there against the checklist above. It cannot judge quality or tell you how a buyer will mark it, and some items belong in attachments, not in the written answers."));
+    });
+    wrap.appendChild(ta); wrap.appendChild(go); wrap.appendChild(res);
+    return wrap;
+  }
   function assistPanel(t) {
     var a = assistData(t), box = el("div", "assist"), held = have();
     function section(title) { box.appendChild(el("h4", null, title)); var ul = el("ul"); box.appendChild(ul); return ul; }
@@ -181,6 +234,7 @@
     var g2 = el("a", null, "Writing answers that score"); g2.href = "/guides/writing-a-tender-response-that-scores-well/";
     foot.appendChild(g1); foot.appendChild(g2);
     box.appendChild(foot);
+    box.appendChild(draftBox(t, a));
     box.appendChild(el("p", "assist-note", "Drawn from the notice, any published documents and our read of them. It is a starting point, not the full requirement: check the tender pack before you rely on it."));
     return box;
   }
