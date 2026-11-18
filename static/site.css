@@ -211,3 +211,15 @@ fieldset p.fine{margin:4px 0 10px}
 .work-form .check{display:flex;gap:10px;align-items:flex-start;font-weight:400;font-size:14px;margin:10px 0}
 .work-form .check input{width:20px;height:20px;flex:none;margin-top:1px}
 .work-item{display:block}.work-item strong{font-size:17px}
+
+.compare-box{border:1px solid var(--line);border-radius:6px;background:#fff;overflow:hidden}
+.compare{border-collapse:collapse;width:100%;font-size:15px;table-layout:fixed}
+.compare th,.compare td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:center;vertical-align:middle;text-transform:none;letter-spacing:0;font-size:inherit;color:var(--ink);background:#fff}
+.compare thead th{background:var(--ink);color:#fff;font-weight:700}
+.compare thead th:first-child,.compare tbody th{text-align:left;width:46%;font-weight:500}
+.compare tbody tr:last-child th,.compare tbody tr:last-child td{border-bottom:0}
+.compare .yes{color:var(--green);font-weight:700;font-size:18px}.compare .no{color:#9AA3AF}
+.compare .short{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:640px){.compare{font-size:13px}.compare th,.compare td{padding:9px 4px}.compare thead th:first-child,.compare tbody th{width:48%;padding-left:10px}
+.compare .long{display:none}.compare .short{display:inline}}

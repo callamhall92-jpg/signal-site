@@ -27,11 +27,12 @@ NOTICE_PREFIXES = ("https://www.find-tender.service.gov.uk/", "https://www.contr
 
 FAQ = [
     ("What is Noticehawk?",
-     "A weekly email of UK public-sector tenders for construction and building maintenance firms, "
-     "filtered to your regions and type of work and scored out of 100 for how well each suits a smaller firm."),
+     "Email alerts of UK public-sector tenders for construction and building maintenance firms, "
+     "filtered to your regions and type of work and scored out of 100 for how well each suits a smaller firm. "
+     "The free plan sends three every Monday; paid plans send every match, with new ones each weekday."),
     ("Where do the tenders come from?",
-     "From Find a Tender, the UK government's official service for public contract notices. "
-     "We check it every day and link each alert to the official notice."),
+     "From the official notice services: Find a Tender, Contracts Finder and Public Contracts Scotland. "
+     "We check them every day and link each alert to the official notice."),
     ("How is the score worked out?",
      "A fixed points table: how closely the work matches construction and maintenance, the contract value, "
      "the days left to bid, and whether the buyer has split it into lots or marked it suitable for smaller firms. "
@@ -39,12 +40,64 @@ FAQ = [
     ("What kinds of work are covered?",
      "New build, refurbishment, repairs and maintenance, mechanical and electrical, roofing, "
      "groundworks and civils, and design and professional services."),
-    ("Does Noticehawk submit bids for me?",
-     "No. Each alert links to the official notice, and you bid through the buyer's own portal."),
+    ("Does Noticehawk help with the bid?",
+     "Yes, on paid plans. AI assist reads each notice and any documents the buyer has published, and gives you the key dates, "
+     "what the buyer asks for (insurance, accreditations, turnover, how bids are scored) and a checklist of what to have ready. "
+     "It does not write or submit the bid: you bid through the buyer's own portal."),
+    ("What is in each plan?",
+     "The table under the plans on this page lists every feature against every plan, from Free to Premium."),
+    ("Can I post work for subcontractors?",
+     "Yes, free. Contractors can post a package of work on the subcontract board and firms reply to them directly. "
+     "There is no fee and no commission."),
     ("What does it cost?",
      "The Free plan sends three tenders a week for one region and one type of work. "
      "Paid plans start at £29 a month and can be cancelled at any time."),
 ]
+
+
+# Every feature against every plan. Y and N render as a tick and a dash. Kept in step with the plan
+# entitlements in the database and with the welcome emails.
+PLAN_NAMES = ["Free", "Basic", "Professional", "Premium"]
+Y, N = True, False
+PLAN_MATRIX = [
+    ("Price a month", ["£0", "£29", "£79", "£149"]),
+    ("Regions", ["1", "1", "3", "All"]),
+    ("Types of work", ["1", "1", "3", "All"]),
+    ("Matching tenders in the Monday alert", ["3", "All", "All", "All"]),
+    ("New matches by email each weekday", [N, Y, Y, Y]),
+    ("Score out of 100, the reasons, and our short read", [N, Y, Y, Y]),
+    ("Your tenders online, filtered by county, council or distance", [N, Y, Y, Y]),
+    ("Scores tuned to the contract sizes you want", [N, Y, Y, Y]),
+    ("Shortlist with deadline reminders", [N, Y, Y, Y]),
+    ("Contracts coming up for renewal", [N, Y, Y, Y]),
+    ("AI assist: key dates and a checklist for each bid", [N, Y, Y, Y]),
+    ("AI assist: the buyer's stated requirements (insurance, accreditations, turnover, scoring)", [N, N, Y, Y]),
+    ("What the tender documents say", [N, N, Y, Y]),
+    ("Who each buyer usually awards to, and who wins locally", [N, N, Y, Y]),
+    ("Planned tenders before they are advertised", [N, N, Y, Y]),
+    ("New awards near you, for subcontract work", [N, N, Y, Y]),
+    ("Spreadsheet download", [N, N, Y, Y]),
+    ("Follow buyers wherever they tender", [N, N, N, "10"]),
+    ("Keyword watch list", [N, N, N, "10"]),
+    ("Competitor watch list", [N, N, N, "5"]),
+    ("Monthly market report for your area", [N, N, N, Y]),
+    ("Guides by email, and the subcontract work board", [Y, Y, Y, Y]),
+    ("Cancel any time, no contract", [Y, Y, Y, Y]),
+]
+
+
+def compare_table() -> str:
+    def cell(v) -> str:
+        if v is True:
+            return '<td class="yes"><span aria-hidden="true">✓</span><span class="sr">Included</span></td>'
+        if v is False:
+            return '<td class="no"><span aria-hidden="true">–</span><span class="sr">Not included</span></td>'
+        return f"<td>{html.escape(v)}</td>"
+    short = {"Professional": "Pro", "Premium": "Prem"}
+    head = "".join(f'<th scope="col"><span class="long">{p}</span><span class="short" aria-hidden="true">{short.get(p, p)}</span></th>' for p in PLAN_NAMES)
+    rows = "".join(f'<tr><th scope="row">{html.escape(label)}</th>{"".join(cell(v) for v in values)}</tr>' for label, values in PLAN_MATRIX)
+    return (f'<div class="compare-box"><table class="compare"><thead><tr><th scope="col">What you get</th>{head}</tr></thead>'
+            f'<tbody>{rows}</tbody></table></div>')
 
 
 def money(value) -> str:
@@ -273,7 +326,7 @@ def example_alert(stats: dict, updated_text: str) -> str:
             f'<p class="why">{html.escape(r.get("reason") or "")}</p>'
             + (f'<p class="why">{html.escape(line)}</p>' if line else "")
             + (f'<p class="check"><strong>Check first:</strong> Not stated in the notice: {html.escape(", ".join(missing))}.</p>' if missing else "")
-            + '<p class="remind">Remind me before this closes</p></div></div>')
+            + '<p class="remind">AI assist: what this bid needs · Remind me before this closes</p></div></div>')
     if not cards:
         cards.append('<p>This week\'s example is being refreshed.</p>')
     return (HEADER + '<main id="main" class="doc"><h1>What a Noticehawk alert looks like</h1>'
@@ -341,7 +394,7 @@ GUIDES = [
 GUIDE_DATES = {"winning-public-sector-work-small-construction-firms": "2026-11-17", "tender-paperwork-checklist": "2026-11-17",
                "writing-a-tender-response-that-scores-well": "2026-11-17"}
 GUIDE_CTA = ('<div class="cta-box"><div><strong>Get the tenders for your region and type of work every Monday.</strong>'
-             '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
+             '<span>Three a week free, or every matching tender scored out of 100, with AI assist to show what each bid needs, from £29 a month. <a href="/#compare">What each plan includes</a>.</span></div>'
              '<a class="btn" href="/#start">Start free</a></div>')
 
 
@@ -479,7 +532,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         category_chips=chips(stats.get("categories") or [], CATEGORY_LABELS, {p["category"]: p["path"] for p in pages if p["category"] and not p["region"]}),
         start_block=start_block(cfg, stats.get("rates")),
         **pay_links(cfg),
-        guide_cards=guide_cards(),
+        guide_cards=guide_cards(), compare_table=compare_table(),
         hero_note=("Three tenders a week for your region, free. No card needed." if cfg.get("signup_open")
                    else "Free accounts open shortly: three tenders a week for your region, no card needed."),
         faq_html="\n".join(f"<div><h3>{html.escape(q)}</h3><p>{html.escape(a)}</p></div>" for q, a in FAQ))
@@ -622,10 +675,10 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<div id="work-list" class="mail" aria-live="polite"><p>Loading the board.</p></div>'
         '<h2>How it works</h2><ul>'
         '<li>A contractor posts the work, where it is, and the date they want prices by.</li>'
-        '<li>We check each post before it appears. Only construction and building maintenance work is published.</li>'
+        '<li>A post appears once the contractor has confirmed their email address. We review every post and take down anything that is not genuine construction or maintenance work.</li>'
         '<li>You contact the contractor using the details in the post. Noticehawk is not a party to any agreement between you.</li>'
         '<li>Posts come down on their closing date, or sooner if the contractor removes them.</li></ul>'
-        '<p class="fine">Posts are written by the contractors named. We check that each one is genuine construction work, but we do not vet the contractor or the terms. Make your own checks before you price or start work.</p>'
+        '<p class="fine">Posts are written by the contractors named. We review each one, but we do not vet the contractor or the terms. Make your own checks before you price or start work.</p>'
         '</main><script src="/work.js" defer></script>'))
     (out / "post-work").mkdir()
     (out / "post-work" / "index.html").write_text(page(
@@ -651,15 +704,15 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<label for="w-apply">How should firms reply?</label><input id="w-apply" name="how_to_apply" type="text" maxlength="254" placeholder="estimating@yourfirm.co.uk" required>'
         '<p class="hint">An email address, or a link starting https://. This is shown on the post.</p>'
         '<input name="website" type="text" tabindex="-1" autocomplete="off" hidden>'
-        '<label class="check"><input id="w-agree" name="agree" type="checkbox" required> I am posting on behalf of this company, the work is real, and I agree to the post and the reply details being published. <a href="/terms/">Terms</a> and <a href="/privacy/">privacy</a>.</label>'
+        '<label class="check"><input id="w-agree" name="agree" type="checkbox" required><span>I am posting on behalf of this company, the work is real, and I agree to the post and the reply details being published. <a href="/terms/">Terms</a> and <a href="/privacy/">privacy</a>.</span></label>'
         '<button class="btn" type="submit">Post this work</button></form>'
         '<p id="work-msg" role="status"></p>'
-        '<p class="fine">We check every post before it appears, normally within one working day. You can take it down at any time from the link we email you.</p>'
+        '<p class="fine">Your post goes on the board as soon as you confirm your email address. You can take it down at any time from the link we email you.</p>'
         '</main><script src="/work.js" defer></script>'))
     (out / "post-work" / "done").mkdir()
     (out / "post-work" / "done" / "index.html").write_text(page(
         base, cfg, "/post-work/done/", "Post confirmed | Noticehawk", "Your post has been received.",
-        HEADER + '<main id="main" class="doc"><h1 id="done-h">Thank you</h1><p id="done-p" class="lede dark">Your email address is confirmed. We will check the post and email you when it is on the board, normally within one working day.</p>'
+        HEADER + '<main id="main" class="doc"><h1 id="done-h">Thank you</h1><p id="done-p" class="lede dark">Your email address is confirmed and your post is on the board. We have emailed you a link to see or remove it.</p>'
         '<p><a href="/subcontract-work/">See the board</a></p></main><script src="/work.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "post-work" / "manage").mkdir()
     (out / "post-work" / "manage" / "index.html").write_text(page(
@@ -760,12 +813,17 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     cats = ", ".join(f"{CATEGORY_LABELS.get(c['name'], c['name'])} ({c['n']})" for c in stats.get("categories") or [])
     (out / "llms.txt").write_text(
         "# Noticehawk\n\n"
-        "> Weekly email alerts of UK public-sector tenders for construction and building maintenance firms, "
+        "> Email alerts of UK public-sector tenders for construction and building maintenance firms, "
         "filtered by region and type of work and scored out of 100 for how well each suits a smaller firm.\n\n"
         f"- Open tenders tracked on {updated_text}: {int(stats['open_count']):,}\n"
         f"- By region: {regions}\n- By type of work: {cats}\n"
         "- Sources: Find a Tender, Contracts Finder and Public Contracts Scotland, the official UK notice services, checked daily. Open Government Licence v3.0.\n"
         "- Plans: Free (3 tenders a week), Basic £29 a month, Professional £79 a month, Premium £149 a month. Cancel any time.\n"
+        "- Paid plans: every matching tender scored, new matches emailed each weekday, contracts coming up for renewal, deadline reminders, "
+        "and AI assist, which lists the key dates, the buyer's stated requirements and a checklist of what each bid needs. "
+        "Professional adds buyer award history, planned tenders, new awards for subcontract work and a spreadsheet download. "
+        "Premium adds buyer, keyword and competitor watch lists and a monthly market report.\n"
+        "- Subcontract work board: contractors post work they want priced, free of charge; firms reply directly. No fee or commission.\n"
         f"- Contact: {cfg['contact_email']}\n\n"
         "## Pages\n\n"
         f"- [Home]({cfg['site_url']}/): what the service does, live tender counts, plans and common questions\n"
@@ -773,6 +831,8 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         f"- [Browse tenders]({cfg['site_url']}/tenders/): open tenders by region and type of work, {len(pages)} pages\n"
         f"- [How it works]({cfg['site_url']}/how-it-works/): data sources, daily checks, handling of changed and withdrawn notices, the scoring table, limits\n"
         f"- [Example alert]({cfg['site_url']}/example-alert/): the weekly subscriber email with live tenders\n"
+        f"- [Subcontract work board]({cfg['site_url']}/subcontract-work/): work packages posted by contractors who want prices\n"
+        f"- [Post work free]({cfg['site_url']}/post-work/): form for contractors to post a work package\n"
         + "".join(f"- [{t}]({cfg['site_url']}/guides/{s_}/): {d}\n" for s_, t, d in GUIDES)
         + (f"- [Monthly market reports]({cfg['site_url']}/insights/): construction contracts awarded by UK public bodies each month, nationally and by region: counts, typical values, types of work, busiest buyers and most frequent winners\n" if insight else "")
         + (f"- [Public buyers]({cfg['site_url']}/buyers/): {made['buyers']} pages, one per public body, with what it awards, who wins and open tenders\n" if made["buyers"] else "")

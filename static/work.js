@@ -45,7 +45,7 @@
       ["company", "company_number", "email", "title", "category", "region", "town", "description", "value_band", "apply_by", "how_to_apply"].forEach(function (k) { body[k] = form[k].value.trim(); });
       button.disabled = true; msg.textContent = "";
       post(form.dataset.api, body).then(function (res) {
-        if (res.status === 200) { form.hidden = true; msg.textContent = "Nearly done. We have sent a confirmation link to " + body.email + ". Click it and we will check the post and publish it. Check your junk folder if it has not arrived in a few minutes."; return; }
+        if (res.status === 200) { form.hidden = true; msg.textContent = "Nearly done. We have sent a confirmation link to " + body.email + ". Click it and your post goes on the board straight away. Check your junk folder if it has not arrived in a few minutes."; return; }
         if (res.status === 422) return res.json().then(function (j) { msg.textContent = "Please check " + (FIELDS[j.field] || "the form") + "."; });
         msg.textContent = res.status === 503 ? "We are getting a lot of posts. Please try again in an hour." : "That did not work. Please try again.";
       }).catch(function () { msg.textContent = "We could not reach the server. Check your connection and try again."; })
@@ -64,7 +64,7 @@
   if (manage) {
     var q = new URLSearchParams(location.search), review = q.get("review"), own = q.get("post"), api = main.dataset.api;
     var STATUS = { unconfirmed: "Waiting for the email address to be confirmed.", pending: "Waiting to be checked. It is not on the board yet.",
-      live: "On the board now.", rejected: "Not published.", removed: "Removed. It is no longer on the board." };
+      live: "On the board now.", rejected: "Taken down. It is not on the board.", removed: "Removed. It is no longer on the board." };
     function show(d) {
       manage.textContent = "";
       manage.appendChild(el("p", "lede dark", STATUS[d.status] || ""));
@@ -79,7 +79,8 @@
         });
         acts.appendChild(b);
       }
-      if (review && d.status === "pending") { act("Approve and publish", "btn", { review: review, action: "approve" }); act("Reject", "linkish", { review: review, action: "reject" }); }
+      if (review && d.status === "pending") act("Approve and publish", "btn", { review: review, action: "approve" });
+      if (review && (d.status === "pending" || d.status === "live")) act("Take this post down", d.status === "live" ? "btn" : "linkish", { review: review, action: "reject" });
       if (own && (d.status === "live" || d.status === "pending")) act("Remove this post", "btn", { manage: own, action: "remove" });
       manage.appendChild(acts);
     }
