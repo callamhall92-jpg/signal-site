@@ -62,6 +62,7 @@ PLAN_NAMES = ["Free", "Basic", "Professional", "Premium"]
 Y, N = True, False
 PLAN_MATRIX = [
     ("Price a month, no VAT added", ["£0", "£29", "£79", "£149"]),
+    ("Or for a year, two months free", ["", "£290", "£790", "£1,490"]),
     ("Regions", ["1", "1", "3", "All"]),
     ("Types of work", ["1", "1", "3", "All"]),
     ("Matching tenders in the Monday alert", ["3", "All", "All", "All"]),
@@ -185,6 +186,12 @@ def pay_links(cfg: dict) -> dict:
                          ("pay_premium", "construction_premium")):
         url = links.get(product) if cfg.get("signup_open") else None
         out[key] = html.escape(url, quote=True) if url else "#start"
+    # A year paid up front costs ten months: shown under each plan button when the links are set.
+    yearly = cfg.get("annual_links") or {}
+    for key, product, price in (("year_basic", "construction_basic", "£290"), ("year_pro", "construction_pro", "£790"),
+                                ("year_premium", "construction_premium", "£1,490")):
+        url = yearly.get(product) if cfg.get("signup_open") else None
+        out[key] = (f'<p class="yearly">or <a href="{html.escape(url, quote=True)}">{price} a year</a>, two months free</p>' if url else "")
     return out
 
 
@@ -797,7 +804,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
     (out / "account").mkdir()
     (out / "account" / "index.html").write_text(page(
         base, cfg, "/account/", "Your account | Noticehawk", "Your live tender matches.",
-        HEADER + f'<main id="main" class="doc wide" data-api="{html.escape(cfg["account_url"], quote=True)}" '
+        HEADER + f'<main id="main" class="doc wide" data-api="{html.escape(cfg["account_url"], quote=True)}" data-work="{html.escape(cfg["work_url"], quote=True)}" '
         f'data-shortlist="{html.escape(cfg["shortlist_url"], quote=True)}" data-feedback="{html.escape(cfg["feedback_url"], quote=True)}">'
         '<p id="loading">Loading your tenders…</p>'
         '<div id="problem" hidden><h1 id="problem-title"></h1><p id="problem-text"></p>' + login_form + '</div>'
@@ -806,7 +813,8 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p id="setup" class="check" hidden>You have not chosen your regions and type of work yet, so there is nothing to show. Use the link above to choose them.</p>'
         '<div class="tabs" role="tablist"><button type="button" role="tab" id="tab-tenders">Open tenders</button>'
         '<button type="button" role="tab" id="tab-coming">Coming soon</button>'
-        '<button type="button" role="tab" id="tab-renewals">Renewals</button></div>'
+        '<button type="button" role="tab" id="tab-renewals">Renewals</button>'
+        '<button type="button" role="tab" id="tab-work">Subcontract work</button></div>'
         '<div id="filters" class="filters">'
         '<label>Region<select id="f-region"><option value="">All yours</option></select></label>'
         '<label>County<select id="f-county"><option value="">All</option></select></label>'

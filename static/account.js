@@ -2,7 +2,7 @@
 (function () {
   var main = document.getElementById("main");
   var token = new URLSearchParams(location.search).get("token") || "";
-  var state = { data: null, tab: "tenders", base: null, assist: new URLSearchParams(location.search).get("assist") };
+  var state = { data: null, tab: "tenders", base: null, work: null, assist: new URLSearchParams(location.search).get("assist") };
   var LABELS = { new_build: "New build", refurbishment: "Refurbishment", repairs_maintenance: "Repairs and maintenance",
     roofing: "Roofing", mechanical_electrical: "Mechanical and electrical", groundworks_civils: "Groundworks and civils",
     design_professional: "Design and professional" };
@@ -425,7 +425,7 @@
   function render() {
     var d = state.data, list = $("list"), rows;
     list.textContent = "";
-    ["tenders", "coming", "renewals"].forEach(function (k) { var b = $("tab-" + k); if (b) b.setAttribute("aria-selected", String(state.tab === k)); });
+    ["tenders", "coming", "renewals", "work"].forEach(function (k) { var b = $("tab-" + k); if (b) b.setAttribute("aria-selected", String(state.tab === k)); });
     $("filters").hidden = state.tab !== "tenders";
     if (state.tab === "tenders") {
       rows = filtered();
@@ -441,6 +441,21 @@
       $("count").textContent = d.coming.length + " planned";
       d.coming.forEach(function (c) { list.appendChild(simpleCard(c.title, c.url, [c.buyer || "Buyer not stated", [c.region, LABELS[c.category], money(c.value), c.expected ? "tender expected " + monthYear(c.expected) : "tender date not yet stated"].filter(Boolean).join(" | ")])); });
       if (!d.coming.length) list.appendChild(el("p", "empty", "No planned procurements for your regions and type of work right now."));
+    } else if (state.tab === "work") {
+      // Work packages posted by contractors on the board, for the subscriber's regions.
+      var BANDS = { under_10k: "under £10,000", "10k_50k": "£10,000 to £50,000", "50k_250k": "£50,000 to £250,000", "250k_1m": "£250,000 to £1 million", over_1m: "over £1 million" };
+      var posts = (state.work || []).filter(function (p) { return d.national || (d.regions || []).indexOf(p.region) !== -1; });
+      $("count").textContent = state.work === null ? "Loading" : posts.length + " posted by contractors";
+      posts.forEach(function (p) {
+        var reply = /^https:\/\//.test(p.how_to_apply) ? p.how_to_apply : "mailto:" + p.how_to_apply + "?subject=" + encodeURIComponent(p.title + " (seen on Noticehawk)");
+        list.appendChild(simpleCard(p.title, reply, [p.company, [p.town ? p.town + ", " + p.region : p.region, LABELS[p.category], BANDS[p.value_band], "prices by " + nice(p.apply_by)].filter(Boolean).join(" | "), p.description,
+          /^https:\/\//.test(p.how_to_apply) ? null : "Reply to: " + p.how_to_apply]));
+      });
+      if (state.work !== null && !posts.length) list.appendChild(el("p", "empty", "No work is posted for your regions right now. The board is new; anything posted will also be in your alerts."));
+      var more = el("p", "empty"), a1 = el("a", null, "See the whole board"), a2 = el("a", null, "post work free");
+      a1.href = "/subcontract-work/"; a2.href = "/post-work/";
+      more.appendChild(a1); more.appendChild(document.createTextNode(" or ")); more.appendChild(a2); more.appendChild(document.createTextNode("."));
+      list.appendChild(more);
     } else {
       $("count").textContent = d.renewals.length + " ending in 3 to 15 months";
       d.renewals.forEach(function (r) { list.appendChild(simpleCard(r.title, r.url, [r.buyer || "Buyer not stated", ["Ends " + monthYear(r.ends), "held by " + ((r.winners || []).slice(0, 2).join(" and ") || "not stated"), money(r.value)].join(" | ")])); });
@@ -474,9 +489,11 @@
     ["coming", "renewals"].forEach(function (k) { if (d[k] === null || d[k] === undefined) { $("tab-" + k).hidden = true; d[k] = []; } });
     if (d.needs_setup) $("setup").hidden = false;
     ["f-region", "f-county", "f-council", "f-miles", "f-type", "f-days", "f-score", "f-size", "f-text", "f-short"].forEach(function (id) { $(id).addEventListener("input", render); });
-    ["tenders", "coming", "renewals"].forEach(function (k) { $("tab-" + k).addEventListener("click", function () { state.tab = k; render(); }); });
+    ["tenders", "coming", "renewals", "work"].forEach(function (k) { $("tab-" + k).addEventListener("click", function () { state.tab = k; render(); }); });
     $("loading").hidden = true; $("app").hidden = false;
     render();
+    fetch(main.dataset.work).then(function (r) { return r.json(); }).then(function (w) { state.work = w.posts || []; })
+      .catch(function () { state.work = []; }).then(function () { if (state.tab === "work") render(); });
   }
   function fail(title, text) { $("loading").hidden = true; $("problem").hidden = false; $("problem-title").textContent = title; $("problem-text").textContent = text; }
 

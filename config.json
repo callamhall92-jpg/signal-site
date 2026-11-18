@@ -16,5 +16,10 @@
     "construction_pro": "https://buy.stripe.com/14A28rbLUbEv27R1At8N202",
     "construction_premium": "https://buy.stripe.com/aFabJ1g2adMDfYH92V8N201"
   },
-  "work_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/post-work"
+  "work_url": "https://wboavagwignktkodqvwa.supabase.co/functions/v1/post-work",
+  "annual_links": {
+    "construction_basic": "https://buy.stripe.com/9B65kD3focIzcMvdjb8N203",
+    "construction_pro": "https://buy.stripe.com/bJefZhg2aaArh2Lgvn8N204",
+    "construction_premium": "https://buy.stripe.com/7sYeVdaHQcIz8wf7YR8N205"
+  }
 }
