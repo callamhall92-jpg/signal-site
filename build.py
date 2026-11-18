@@ -52,7 +52,14 @@ FAQ = [
      "There is no fee and no commission."),
     ("What does it cost?",
      "The Free plan sends three tenders a week for one region and one type of work. "
-     "Paid plans start at £29 a month and can be cancelled at any time. No VAT is added to our prices."),
+     "Paid plans start at £29 a month, or £290 for a year, and can be cancelled at any time. No VAT is added to our prices."),
+    ("Are the scores for my business or a typical one?",
+     "Both. Every tender starts with a score for a typical smaller firm. On paid plans you can add the contract sizes you take on, "
+     "your base postcode and how far you travel, what you specialise in and what you never take, and your scores, the order of "
+     "your tenders and what we send change to match. Each change is explained on the tender."),
+    ("Which parts of the UK do you cover?",
+     "All four nations for contracts on Find a Tender, plus Contracts Finder for England and Public Contracts Scotland. "
+     "Smaller contracts published only on Sell2Wales or eTendersNI are not yet included. The table on this page shows it by nation."),
 ]
 
 
@@ -809,7 +816,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<p id="loading">Loading your tenders…</p>'
         '<div id="problem" hidden><h1 id="problem-title"></h1><p id="problem-text"></p>' + login_form + '</div>'
         '<div id="app" hidden><h1>My tenders</h1>'
-        '<p class="fine"><span id="plan"></span> · <a id="prefs" href="/preferences/">Change regions, type of work or contract size</a></p>'
+        '<p class="fine"><span id="plan"></span> · <a id="prefs" href="/preferences/">Tell us about your business, or change regions, type of work or contract size</a></p>'
         '<p id="setup" class="check" hidden>You have not chosen your regions and type of work yet, so there is nothing to show. Use the link above to choose them.</p>'
         '<div class="tabs" role="tablist"><button type="button" role="tab" id="tab-tenders">Open tenders</button>'
         '<button type="button" role="tab" id="tab-coming">Coming soon</button>'
@@ -903,7 +910,9 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         "- Sources: Find a Tender, Contracts Finder and Public Contracts Scotland, the official UK notice services, checked daily. Open Government Licence v3.0.\n"
         "- Plans: Free (3 tenders a week), Basic £29 a month, Professional £79 a month, Premium £149 a month. Cancel any time.\n"
         "- Paid plans: every matching tender scored, new matches emailed each weekday, contracts coming up for renewal, deadline reminders, "
-        "and AI assist, which lists the key dates, the buyer's stated requirements and a checklist of what each bid needs. "
+        "and AI assist, which lists the key dates, the buyer's stated requirements and a checklist of what each bid needs, and checks a pasted draft for gaps. "
+        "Scores are adjusted to each subscriber's business: contract size, base and travel distance, specialisms and exclusions. "
+        "Plans can be paid monthly or yearly (ten months' price for a year). No VAT is added. An AI review of written bids with a score is coming soon. "
         "Professional adds buyer award history, planned tenders, new awards for subcontract work and a spreadsheet download. "
         "Premium adds buyer, keyword and competitor watch lists and a monthly market report.\n"
         "- Subcontract work board: contractors post work they want priced, free of charge; firms reply directly. No fee or commission.\n"
