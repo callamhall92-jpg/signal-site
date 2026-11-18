@@ -449,7 +449,7 @@
       posts.forEach(function (p) {
         var reply = /^https:\/\//.test(p.how_to_apply) ? p.how_to_apply : "mailto:" + p.how_to_apply + "?subject=" + encodeURIComponent(p.title + " (seen on Noticehawk)");
         list.appendChild(simpleCard(p.title, reply, [p.company, [p.town ? p.town + ", " + p.region : p.region, LABELS[p.category], BANDS[p.value_band], "prices by " + nice(p.apply_by)].filter(Boolean).join(" | "), p.description,
-          /^https:\/\//.test(p.how_to_apply) ? null : "Reply to: " + p.how_to_apply]));
+          "Reply to: " + p.how_to_apply]));
       });
       if (state.work !== null && !posts.length) list.appendChild(el("p", "empty", "No work is posted for your regions right now. The board is new; anything posted will also be in your alerts."));
       var more = el("p", "empty"), a1 = el("a", null, "See the whole board"), a2 = el("a", null, "post work free");
