@@ -327,6 +327,8 @@ def render_listing(page: dict, pages: list[dict], cfg: dict, updated_text: str) 
             {"@type": "ListItem", "position": i + 1, "name": name, "item": cfg["site_url"] + path} for i, (name, path) in enumerate(crumbs)]},
         {"@type": "ItemList", "name": title, "numberOfItems": n, "itemListElement": [
             {"@type": "ListItem", "position": i + 1, "name": r["title"], "url": r["url"]} for i, r in enumerate(shown)]}]}
+    iso = datetime.strptime(updated_text, "%d %B %Y").strftime("%Y-%m-%d")
+    ld["@graph"].append({"@type": "CollectionPage", "name": title, "url": cfg["site_url"] + page["path"], "dateModified": iso})
     head = '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"
     trail = " › ".join(f'<a href="{path}">{html.escape(name)}</a>' for name, path in crumbs[:-1])
     body = (HEADER + '<main id="main" class="doc wide">'
@@ -335,6 +337,7 @@ def render_listing(page: dict, pages: list[dict], cfg: dict, updated_text: str) 
             f'checked daily against the official notice services. The next closes in {int(rows[0]["days"])} days.</p>'
             '<div class="tablebox light"><table class="rows"><thead><tr><th scope="col">Tender</th><th scope="col">Buyer</th>'
             f'<th scope="col">Value</th><th scope="col">Closes</th></tr></thead><tbody>{body_rows}</tbody></table></div>'
+            f'<p class="fine">Last updated <time datetime="{iso}">{updated_text}</time>. Closing dates and values come from the official notice; open it to check before you bid.</p>'
             f'{more}<div class="cta-box"><div><strong>Get these by email every Monday.</strong>'
             '<span>Three a week free, or every matching tender with a score out of 100 from £29 a month.</span></div>'
             '<a class="btn" href="/#start">Start free</a></div>'

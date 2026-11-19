@@ -259,6 +259,19 @@
     if (docs) line(body, docs[0], docs[1]);
     if (t.fitNote) line(body, "Check first", t.fitNote + ".", "check");
     if (t.parts) body.appendChild(el("p", "why", PARTS.filter(function (p) { return t.parts[p[0]]; }).map(function (p) { return p[1] + " " + t.parts[p[0]][0] + "/" + t.parts[p[0]][1]; }).join(" · ")));
+    function calendarFile(t) {
+      function esc(s) { return String(s).replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\r?\n/g, " "); }
+      var iso = String(t.deadline).slice(0, 10), next = new Date(iso + "T00:00:00Z");
+      next.setUTCDate(next.getUTCDate() + 1);
+      var ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Noticehawk//Shortlist//EN", "BEGIN:VEVENT",
+        "UID:" + t.id + "@noticehawk.co.uk", "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z",
+        "DTSTART;VALUE=DATE:" + iso.replace(/-/g, ""), "DTEND;VALUE=DATE:" + next.toISOString().slice(0, 10).replace(/-/g, ""),
+        "SUMMARY:" + esc("Tender closes: " + t.title),
+        "DESCRIPTION:" + esc("Check the official notice for the exact closing time. " + (t.url || "")),
+        "BEGIN:VALARM", "TRIGGER:-P2D", "ACTION:DISPLAY", "DESCRIPTION:" + esc("Tender closes in 2 days: " + t.title), "END:VALARM",
+        "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+      return "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+    }
     var b = el("button", "linkish", t.shortlisted ? "On your shortlist. Remove" : "Remind me before this closes");
     b.type = "button";
     b.addEventListener("click", function () {
@@ -281,6 +294,12 @@
     if (state.assist === t.id) { state.assist = null; setTimeout(function () { toggleAssist(); item.scrollIntoView({ block: "start" }); }, 0); }
     actions.appendChild(help);
     actions.appendChild(b);
+    if (t.shortlisted && t.deadline) {
+      var cal = el("a", "linkish", "Add the deadline to my calendar");
+      cal.href = calendarFile(t);
+      cal.download = "tender-deadline.ics";
+      actions.appendChild(cal);
+    }
     var nope = el("button", "linkish", "Not for me");
     nope.type = "button";
     nope.addEventListener("click", function () {
