@@ -78,6 +78,7 @@ PLAN_MATRIX = [
     ("Your tenders online, filtered by county, council or distance", [N, Y, Y, Y]),
     ("Scores tuned to your business: contract size, travel distance, specialisms and work to leave out", [N, Y, Y, Y]),
     ("Shortlist with deadline reminders", [N, Y, Y, Y]),
+    ("A second email address, so a colleague gets the alerts too", [N, Y, Y, Y]),
     ("Contracts coming up for renewal", [N, Y, Y, Y]),
     ("AI assist: key dates and a checklist for each bid", [N, Y, Y, Y]),
     ("Draft check: paste your answers and see what is missing", [N, Y, Y, Y]),
@@ -634,6 +635,18 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         simple.format(h="You're in.", p="Thank you. Your subscription is set up and a receipt is on its way from Stripe. "
                       "If you have not chosen your regions and type of work yet, we will email you a link to do it. "
                       "Your first alert arrives on the Monday after that."), '<meta name="robots" content="noindex">'))
+    (out / "copy").mkdir()
+    (out / "copy" / "index.html").write_text(page(
+        base, cfg, "/copy/", "Alert copies | Noticehawk", "Confirm or stop copies of Noticehawk tender alerts.",
+        '<div class="night"><header><div class="wrap"><a class="brand" href="/"><i aria-hidden="true"></i>Noticehawk</a>'
+        f'</div></header></div><main id="main" class="doc" data-api="{html.escape(cfg["preferences_url"], quote=True)}">'
+        '<div id="c-ok" hidden><h1>You\'re confirmed.</h1><p>You will now get a copy of the tender alerts for this account: the full list on Monday, and new matches on weekdays. Every copy has a link to stop them.</p></div>'
+        '<div id="c-stop" hidden><h1>Stop these copies?</h1><p>You will no longer be sent copies of these tender alerts. The account holder keeps theirs.</p>'
+        '<p><button class="btn dark" id="c-go" type="button">Stop the copies</button></p></div>'
+        '<div id="c-done" hidden><h1>Stopped.</h1><p>You will not be sent any more copies, and your address has been removed from the account.</p></div>'
+        '<div id="c-bad" hidden><h1>That link did not work.</h1><p>It may already have been used, or the account holder has changed the address. '
+        f'Email <a href="mailto:{html.escape(cfg["contact_email"])}">{html.escape(cfg["contact_email"])}</a> and we will sort it out.</p></div>'
+        '<p><a class="btn outline" href="/">About Noticehawk</a></p></main><script src="/copy.js" defer></script>', '<meta name="robots" content="noindex">'))
     (out / "confirmed").mkdir()
     (out / "confirmed" / "index.html").write_text(page(
         base, cfg, "/confirmed/", "Email confirmed | Noticehawk", "Your Noticehawk email address is confirmed.",
@@ -699,6 +712,12 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         '<textarea id="avoid" rows="3" placeholder="asbestos&#10;scaffolding"></textarea>'
         '<p class="fine">A tender that mentions one of these is not sent to you.</p>'
         '<label class="tick"><input id="skip_frameworks" type="checkbox"> <span>Leave out frameworks, where a place on the list does not guarantee work</span></label>'
+        '</fieldset>'
+        '<fieldset id="copy" hidden><legend>A second email address</legend>'
+        '<p class="fine">Send a copy of every alert to an estimator, partner or office address. We email them once to ask; nothing more is sent unless they confirm, and they can stop the copies at any time. The copy includes the links to this account.</p>'
+        '<label for="copy_email">Their email address</label>'
+        '<input id="copy_email" type="email" autocomplete="off" maxlength="254" placeholder="Leave blank for none">'
+        '<p class="fine" id="copy-state"></p>'
         '</fieldset>'
         '<fieldset id="watch" hidden><legend>Watchlists <span class="fine">(Premium)</span></legend>'
         '<label for="keywords">Keywords to watch, one per line <span class="fine" id="keyword-limit"></span></label>'

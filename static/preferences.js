@@ -5,7 +5,7 @@
   var msg = document.getElementById("pref-msg");
   var token = new URLSearchParams(location.search).get("token");
   var limits = { regions: 1, trades: 1 };
-  var watch = false, fit = false, profile = false;
+  var watch = false, fit = false, profile = false, copyOn = false;
   function lines(id) {
     return document.getElementById(id).value.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
   }
@@ -69,10 +69,20 @@
       document.getElementById("buyer-limit").textContent = "(up to " + (p.max_buyers || 0) + ")";
       document.getElementById("buyers").value = (p.buyers || []).join("\n");
     }
+    if (p.fit) {
+      copyOn = true;
+      document.getElementById("copy").hidden = false;
+      copyState(p.copy);
+    }
     form.hidden = false;
   }).catch(function () {
     intro.textContent = "We could not find your account from this link. Open the link from your most recent email, or write to hello@noticehawk.co.uk.";
   });
+  function copyState(c) {
+    document.getElementById("copy_email").value = c && c.email ? c.email : "";
+    document.getElementById("copy-state").textContent = !c || !c.email ? "" :
+      c.confirmed ? "Confirmed. They get a copy of every alert." : "Waiting for them to confirm from the email we sent.";
+  }
   function payload() {
     var body = { token: token, regions: chosen("regions"), trades: chosen("trades") };
     if (watch) { body.keywords = lines("keywords"); body.competitors = lines("competitors"); body.buyers = lines("buyers"); }
@@ -85,6 +95,7 @@
         max_miles: document.getElementById("max_miles").value ? Number(document.getElementById("max_miles").value) : null,
         specialisms: lines("specialisms"), avoid: lines("avoid"), skip_frameworks: document.getElementById("skip_frameworks").checked };
     }
+    if (copyOn) body.copy_email = document.getElementById("copy_email").value.trim();
     return body;
   }
   form.addEventListener("submit", function (e) {
@@ -98,7 +109,14 @@
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (b) { return { status: res.status, body: b }; });
     }).then(function (r) {
-      if (r.status === 200) say("Saved. Your next alert will use these choices.", true);
+      if (r.status === 200) {
+        if (r.body.copy === "asked") { say("Saved. We have emailed the second address to ask them to confirm.", true); document.getElementById("copy-state").textContent = "Waiting for them to confirm from the email we sent."; }
+        else if (r.body.copy === "not_sent") say("Saved, but the email to the second address did not send. Save again to retry.", false);
+        else { if (r.body.copy === "cleared") document.getElementById("copy-state").textContent = ""; say("Saved. Your next alert will use these choices.", true); }
+      }
+      else if (r.body.error === "copy_bad_email") say("The second email address does not look right. Check it and save again.", false);
+      else if (r.body.error === "copy_same") say("The second address is the one your alerts already go to. Enter a different one or leave it blank.", false);
+      else if (r.body.error === "copy_suppressed") say("That address has asked not to receive our emails, so we cannot add it.", false);
       else if (r.body.error === "too_few") say("Choose at least one region and one type of work.", false);
       else if (r.body.error === "watch_too_many") say("That is more keywords, competitors or buyers than your plan includes. Remove some and save again.", false);
       else if (r.body.error === "profile_bad_postcode") say("We could not find that postcode. Check it and save again, or leave it blank.", false);
