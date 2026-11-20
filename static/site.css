@@ -236,3 +236,9 @@ fieldset p.fine{margin:4px 0 10px}
 .draft{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.draft textarea{width:100%;font:inherit;font-size:14px;padding:10px;border:1px solid var(--line);border-radius:4px;margin:6px 0 10px}
 .draft-score{font-weight:700;font-size:16px;margin:12px 0 4px}.draft-result ul.miss li{color:#9A3412}.draft-result ul.ok li{color:var(--grey)}
 .plan .yearly{font-size:14px;color:var(--grey);margin:10px 0 0;text-align:center}.plan .yearly a{color:var(--ink);font-weight:600}
+/* Wider screens: the header stays at the top as you scroll, as the menu button does on phones. */
+@media (min-width:641px){
+  header{position:fixed;top:0;left:0;right:0;z-index:60;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 2px 12px rgba(0,0,0,.18)}
+  .night{padding-top:var(--head-h,84px)}
+  html{scroll-padding-top:calc(var(--head-h,84px) + 12px)}
+}
