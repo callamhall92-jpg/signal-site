@@ -52,7 +52,8 @@ FAQ = [
      "There is no fee and no commission."),
     ("What does it cost?",
      "The Free plan sends three tenders a week for one region and one type of work. "
-     "Paid plans start at £29 a month, or £290 for a year, and can be cancelled at any time. No VAT is added to our prices."),
+     "Paid plans start at £29 a month, or £290 for a year, and can be cancelled at any time. Every paid plan starts with 14 days "
+     "free: we take your card, charge nothing for 14 days and email you 3 days before the first payment. No VAT is added to our prices."),
     ("Are the scores for my business or a typical one?",
      "Both. Every tender starts with a score for a typical smaller firm. On paid plans you can add the contract sizes you take on, "
      "your base postcode and how far you travel, what you specialise in and what you never take, and your scores, the order of "
@@ -70,6 +71,7 @@ Y, N = True, False
 PLAN_MATRIX = [
     ("Price a month, no VAT added", ["£0", "£29", "£79", "£149"]),
     ("Or for a year, two months free", ["", "£290", "£790", "£1,490"]),
+    ("First 14 days free: cancel before the end and pay nothing", [N, Y, Y, Y]),
     ("Regions", ["1", "1", "3", "All"]),
     ("Types of work", ["1", "1", "3", "All"]),
     ("Matching tenders in the Monday alert", ["3", "All", "All", "All"]),
@@ -935,7 +937,7 @@ def build(stats: dict, cfg: dict, out: Path) -> None:
         f"- Open tenders tracked on {updated_text}: {int(stats['open_count']):,}\n"
         f"- By region: {regions}\n- By type of work: {cats}\n"
         "- Sources: Find a Tender, Contracts Finder and Public Contracts Scotland, the official UK notice services, checked daily. Open Government Licence v3.0.\n"
-        "- Plans: Free (3 tenders a week), Basic £29 a month, Professional £79 a month, Premium £149 a month. Cancel any time.\n"
+        "- Plans: Free (3 tenders a week), Basic £29 a month, Professional £79 a month, Premium £149 a month. Every paid plan starts with 14 days free. Cancel any time.\n"
         "- Paid plans: every matching tender scored, new matches emailed each weekday, contracts coming up for renewal, deadline reminders, "
         "and AI assist, which lists the key dates, the buyer's stated requirements and a checklist of what each bid needs, and checks a pasted draft for gaps. "
         "Scores are adjusted to each subscriber's business: contract size, base and travel distance, specialisms and exclusions. "
