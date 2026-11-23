@@ -29,6 +29,11 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sitemap
+          path: dist/sitemap.xml
+          retention-days: 2
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -39,3 +44,15 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+  indexnow:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sitemap
+          path: dist
+      - name: Tell Bing and other IndexNow engines what changed
+        run: python3 indexnow.py
