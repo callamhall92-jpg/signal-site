@@ -1,0 +1,53 @@
+{
+ "guides": [
+  {
+   "slug": "finding-public-sector-construction-tenders",
+   "title": "How to find UK public-sector construction tenders",
+   "description": "Where UK public bodies publish construction tenders: Find a Tender, Contracts Finder, Public Contracts Scotland, Sell2Wales and eTendersNI, with the thresholds that decide which.",
+   "date": "2026-11-16",
+   "hook": null
+  },
+  {
+   "slug": "procurement-act-2023-construction",
+   "title": "The Procurement Act 2023: what changed for construction firms",
+   "description": "What the Procurement Act 2023 changed for construction and maintenance firms: one place for notices, VAT-inclusive thresholds, open frameworks and local reservations.",
+   "date": "2026-11-16",
+   "hook": null
+  },
+  {
+   "slug": "frameworks-and-call-offs",
+   "title": "Frameworks and call-offs explained for construction firms",
+   "description": "How public-sector frameworks and call-off contracts work under the Procurement Act 2023, how long they last, and what they mean for smaller construction firms.",
+   "date": "2026-11-16",
+   "hook": null
+  },
+  {
+   "slug": "tender-alert-services-compared",
+   "title": "UK tender alert services compared",
+   "description": "Free official tender sites and paid UK tender alert services side by side: free options, published prices and what each focuses on.",
+   "date": "2026-11-16",
+   "hook": null
+  },
+  {
+   "slug": "winning-public-sector-work-small-construction-firms",
+   "title": "How small construction firms win public-sector work",
+   "description": "How smaller UK construction and maintenance firms win public-sector contracts: choosing tenders, registering, bid decisions, scoring and feedback under the Procurement Act 2023.",
+   "date": "2026-11-17",
+   "hook": null
+  },
+  {
+   "slug": "tender-paperwork-checklist",
+   "title": "The paperwork buyers ask for: a checklist for construction tenders",
+   "description": "The insurance, health and safety, financial and policy documents UK public buyers usually ask construction firms for, and when each is needed.",
+   "date": "2026-11-17",
+   "hook": null
+  },
+  {
+   "slug": "writing-a-tender-response-that-scores-well",
+   "title": "Writing a tender response that scores well",
+   "description": "How public-sector construction tenders are marked, and how to answer quality, price and social value questions so your bid scores well.",
+   "date": "2026-11-17",
+   "hook": null
+  }
+ ]
+}

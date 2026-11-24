@@ -424,24 +424,10 @@ def weekly_digest(stats: dict, updated_text: str, cfg: dict) -> tuple[str, str]:
     return body, head
 
 
-GUIDES = [
-    ("finding-public-sector-construction-tenders", "How to find UK public-sector construction tenders",
-     "Where UK public bodies publish construction tenders: Find a Tender, Contracts Finder, Public Contracts Scotland, Sell2Wales and eTendersNI, with the thresholds that decide which."),
-    ("procurement-act-2023-construction", "The Procurement Act 2023: what changed for construction firms",
-     "What the Procurement Act 2023 changed for construction and maintenance firms: one place for notices, VAT-inclusive thresholds, open frameworks and local reservations."),
-    ("frameworks-and-call-offs", "Frameworks and call-offs explained for construction firms",
-     "How public-sector frameworks and call-off contracts work under the Procurement Act 2023, how long they last, and what they mean for smaller construction firms."),
-    ("tender-alert-services-compared", "UK tender alert services compared",
-     "Free official tender sites and paid UK tender alert services side by side: free options, published prices and what each focuses on."),
-    ("winning-public-sector-work-small-construction-firms", "How small construction firms win public-sector work",
-     "How smaller UK construction and maintenance firms win public-sector contracts: choosing tenders, registering, bid decisions, scoring and feedback under the Procurement Act 2023."),
-    ("tender-paperwork-checklist", "The paperwork buyers ask for: a checklist for construction tenders",
-     "The insurance, health and safety, financial and policy documents UK public buyers usually ask construction firms for, and when each is needed."),
-    ("writing-a-tender-response-that-scores-well", "Writing a tender response that scores well",
-     "How public-sector construction tenders are marked, and how to answer quality, price and social value questions so your bid scores well."),
-]
-GUIDE_DATES = {"winning-public-sector-work-small-construction-firms": "2026-11-17", "tender-paperwork-checklist": "2026-11-17",
-               "writing-a-tender-response-that-scores-well": "2026-11-17"}
+# The guides, in the order listed on /guides/. New guides are added to guides.json by the guide desk (claude/guide_desk.md).
+_GUIDE_DATA = json.loads((ROOT / "guides.json").read_text())["guides"]
+GUIDES = [(g["slug"], g["title"], g["description"]) for g in _GUIDE_DATA]
+GUIDE_DATES = {g["slug"]: g["date"] for g in _GUIDE_DATA}
 GUIDE_CTA = ('<div class="cta-box"><div><strong>Get the tenders for your region and type of work every Monday.</strong>'
              '<span>Three a week free, or every matching tender scored out of 100, with AI assist to show what each bid needs, from £29 a month. <a href="/#compare">What each plan includes</a>.</span></div>'
              '<a class="btn" href="/#start">Start free</a></div>')
@@ -484,6 +470,7 @@ def write_guides(base: str, cfg: dict, out: Path, insight: bool) -> list[str]:
             f'<ul class="guides">{items}</ul>{GUIDE_CTA}</main>')
     (out / "guides" / "index.html").write_text(page(base, cfg, "/guides/", "Guides to public-sector construction tenders | Noticehawk",
                                                     "Plain-English guides to finding and winning UK public-sector construction and maintenance tenders.", body))
+    (out / "guides.json").write_text(json.dumps({"guides": _GUIDE_DATA}, ensure_ascii=False))
     return ["/guides/"] + paths
 
 
